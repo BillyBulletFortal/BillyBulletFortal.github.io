@@ -1,10 +1,11 @@
+
 const resultado = document.querySelector("#resultado");
 const pesquisa = document.querySelector("#pesquisa");
 const tituloCategoria = document.querySelector("#titulo-categoria");
 const abas = document.querySelectorAll(".aba");
 
 let categoriaAtual = "comercial";
-const API_BASE = "http://localhost:5000/api";
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
 
 // Função para buscar projetos por categoria
 async function buscarProjetos(categoria = "comercial") {
