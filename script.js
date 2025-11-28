@@ -5,7 +5,7 @@ const tituloCategoria = document.querySelector("#titulo-categoria");
 const abas = document.querySelectorAll(".aba");
 
 let categoriaAtual = "comercial";
-const API_BASE_URL = 'https://wayne-industries-api.onrender.com/api';
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
 
 // Função para buscar projetos por categoria
 async function buscarProjetos(categoria = "comercial") {
@@ -133,3 +133,4 @@ document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
 
 });
+
