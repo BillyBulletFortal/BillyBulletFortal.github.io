@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayne Industries - Sistema de Projetos</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+  <header>
+    <img class="logo" src="waynelogo.png" alt="Wayne Enterprises Logo">
+    <nav class="navegacao">
+      <a href="#" class="aba ativa" data-categoria="comercial">Projetos Comerciais</a>
+      <a href="#" class="aba" data-categoria="secreto">Projetos Secretos</a>
+      <a href="#" class="aba" data-categoria="publico">Projetos Públicos</a>
+      <a href="#" class="aba" data-categoria="todos">Todos os Projetos</a>
+    </nav>
+  </header>
+  
+  <main>
+    <input type="text" class="pesquisa" id="pesquisa" placeholder="Digite o nome do projeto">
+    <h2 id="titulo-categoria">Projetos Comerciais</h2>
+    <section id="resultado" class="resultado"></section>
+  </main>
+  
+  <script src="./script.js"></script>
+</body>
+
+</html>
