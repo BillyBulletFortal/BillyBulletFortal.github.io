@@ -131,6 +131,4 @@ abas.forEach(aba => {
 // Carrega os projetos ao iniciar
 document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
-
 });
-

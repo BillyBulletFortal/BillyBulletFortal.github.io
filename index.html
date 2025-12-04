@@ -1,105 +1,31 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indústrias Wayne - Acesso</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icon-192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayne Industries - Sistema de Projetos</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
+
 <body>
-    <div class="container">
-        <header>
-            <h1>🏭 Indústrias Wayne</h1>
-            <p class="subtitle">Sistema de Controle de Acesso</p>
-        </header>
-
-        <main>
-            <div class="card">
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="showTab('login')">Login</button>
-                    <button class="tab-btn" onclick="showTab('register')">Cadastro</button>
-                </div>
-
-                <!-- Login -->
-                <div id="login-tab" class="tab-content active">
-                    <h2>Entrar no Sistema</h2>
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="email">E-mail:</label>
-                            <input type="email" id="email" placeholder="usuario@wayne.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Senha:</label>
-                            <input type="password" id="password" required>
-                        </div>
-                        <button type="button" onclick="login()" class="btn btn-primary">Entrar</button>
-                    </form>
-                </div>
-
-                <!-- Cadastro -->
-                <div id="register-tab" class="tab-content">
-                    <h2>Criar Nova Conta</h2>
-                    <form id="registerForm">
-                        <div class="form-group">
-                            <label for="regName">Nome Completo:</label>
-                            <input type="text" id="regName" placeholder="Bruce Wayne" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regEmail">E-mail:</label>
-                            <input type="email" id="regEmail" placeholder="bruce@wayne.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regPassword">Senha (mínimo 6 caracteres):</label>
-                            <input type="password" id="regPassword" minlength="6" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="regRole">Tipo de Usuário:</label>
-                            <select id="regRole" onchange="toggleAdminCode()">
-                                <option value="vendedor">Vendedor</option>
-                                <option value="gerente">Gerente</option>
-                                <option value="engenheiro">Engenheiro</option>
-                                <option value="admin_projeto">Administrador de Projeto</option>
-                            </select>
-                        </div>
-                        
-                        <div id="adminCodeGroup" class="form-group" style="display: none;">
-                            <label for="adminCode">Código Secreto (apenas para Admins):</label>
-                            <input type="password" id="adminCode" placeholder="Digite o código secreto">
-                            <small>Código requerido para Administradores de Projeto</small>
-                        </div>
-                        
-                        <button type="button" onclick="register()" class="btn btn-primary">Cadastrar</button>
-                    </form>
-                </div>
-            </div>
-
-            <div class="info-box">
-                <h3>Tipos de Acesso</h3>
-                <div class="roles">
-                    <div class="role">
-                        <strong>👨‍💼 Vendedor:</strong> Acesso à área comercial
-                    </div>
-                    <div class="role">
-                        <strong>👔 Gerente:</strong> Acesso gerencial e relatórios
-                    </div>
-                    <div class="role">
-                        <strong>🔧 Engenheiro:</strong> Acesso técnico e projetos
-                    </div>
-                    <div class="role">
-                        <strong>🛡️ Admin de Projeto:</strong> Acesso total + código "TrueLife"
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <footer>
-            <p>Sistema desenvolvido para fins educacionais</p>
-        </footer>
-    </div>
-
-    <script src="auth.js"></script>
-    <script src="app.js"></script>
+  <header>
+    <img class="logo" src="waynelogo.png" alt="Wayne Enterprises Logo">
+    <nav class="navegacao">
+      <a href="#" class="aba ativa" data-categoria="comercial">Projetos Comerciais</a>
+      <a href="#" class="aba" data-categoria="secreto">Projetos Secretos</a>
+      <a href="#" class="aba" data-categoria="publico">Projetos Públicos</a>
+      <a href="#" class="aba" data-categoria="todos">Todos os Projetos</a>
+    </nav>
+  </header>
+  
+  <main>
+    <input type="text" class="pesquisa" id="pesquisa" placeholder="Digite o nome do projeto">
+    <h2 id="titulo-categoria">Projetos Comerciais</h2>
+    <section id="resultado" class="resultado"></section>
+  </main>
+  
+  <script src="./script.js"></script>
 </body>
+
 </html>
