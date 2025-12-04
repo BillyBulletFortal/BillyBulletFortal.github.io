@@ -1,4 +1,3 @@
-
 const resultado = document.querySelector("#resultado");
 const pesquisa = document.querySelector("#pesquisa");
 const tituloCategoria = document.querySelector("#titulo-categoria");
@@ -7,29 +6,88 @@ const abas = document.querySelectorAll(".aba");
 let categoriaAtual = "comercial";
 const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
 
-// Função para buscar projetos por categoria
+// Mapeamento de tipos para compatibilidade
+const tipoMapping = {
+    'comercial': 'comercial',
+    'secreto': 'secreto', 
+    'publico': 'publico',
+    'todos': ''
+};
+
+// Função adaptada para buscar da API existente
 async function buscarProjetos(categoria = "comercial") {
   try {
+    // Se for "todos", busca todos os dados
     const url = categoria === 'todos' 
-      ? `${API_BASE}/projetos`
-      : `${API_BASE}/projetos?tipo=${categoria}`;
-
+      ? `${API_BASE_URL}/data`
+      : `${API_BASE_URL}/data`;
+    
     const resposta = await fetch(url);
     const dados = await resposta.json();
     
     if (dados.success) {
-      exibirProjetos(dados.projetos);
+      // Converte dados da API para formato esperado pelo frontend
+      const projetosConvertidos = converterDadosParaProjetos(dados.data, categoria);
+      exibirProjetos(projetosConvertidos);
     } else {
       console.error("Erro na API:", dados.error);
-      resultado.innerHTML = "<p>Erro ao carregar projetos. Tente novamente mais tarde.</p>";
+      resultado.innerHTML = "<p>Erro ao carregar dados. Tente novamente mais tarde.</p>";
     }
   } catch (erro) {
-    console.error("Erro ao buscar projetos:", erro);
-    resultado.innerHTML = "<p>Erro de conexão. Verifique se o servidor está rodando.</p>";
+    console.error("Erro ao buscar dados:", erro);
+    resultado.innerHTML = "<p>Erro de conexão. Verifique se a API está rodando.</p>";
   }
 }
 
-// Função para buscar projetos por termo de pesquisa
+// Converte dados da API (nome, email) para formato de projetos
+function converterDadosParaProjetos(dados, categoriaFiltro) {
+  if (!dados || !Array.isArray(dados)) return [];
+  
+  // Mapeamento de nomes para tipos de projeto
+  const tipoPorNome = {
+    'joão': 'comercial',
+    'maria': 'publico', 
+    'exemplo': 'secreto'
+  };
+  
+  return dados
+    .filter(item => {
+      if (categoriaFiltro === 'todos') return true;
+      
+      const nomeLower = item.nome.toLowerCase();
+      // Determina tipo baseado no nome
+      for (const [key, tipo] of Object.entries(tipoPorNome)) {
+        if (nomeLower.includes(key)) {
+          return tipo === categoriaFiltro;
+        }
+      }
+      return categoriaFiltro === 'comercial'; // padrão
+    })
+    .map(item => ({
+      nome: item.nome || 'Projeto',
+      descricao: `Email: ${item.email || 'Não informado'} | Criado em: ${item.data_criacao || 'Data desconhecida'}`,
+      tipo: determinarTipo(item.nome),
+      nivel_acesso: determinarNivelAcesso(item.nome)
+    }));
+}
+
+function determinarTipo(nome) {
+  const nomeLower = (nome || '').toLowerCase();
+  if (nomeLower.includes('joão')) return 'comercial';
+  if (nomeLower.includes('maria')) return 'publico';
+  if (nomeLower.includes('exemplo')) return 'secreto';
+  return 'comercial'; // padrão
+}
+
+function determinarNivelAcesso(nome) {
+  const nomeLower = (nome || '').toLowerCase();
+  if (nomeLower.includes('joão')) return 'Restrito';
+  if (nomeLower.includes('maria')) return 'Público';
+  if (nomeLower.includes('exemplo')) return 'Confidencial';
+  return 'Restrito';
+}
+
+// Busca simplificada (não suportada pela API atual)
 async function buscarProjetosPorTermo(termo) {
   if (termo.trim() === "") {
     buscarProjetos(categoriaAtual);
@@ -37,22 +95,26 @@ async function buscarProjetosPorTermo(termo) {
   }
   
   try {
-    const resposta = await fetch(`${API_BASE}/projetos/buscar?termo=${encodeURIComponent(termo)}`);
+    // Como a API atual não tem busca, filtramos localmente
+    const resposta = await fetch(`${API_BASE_URL}/data`);
     const dados = await resposta.json();
     
     if (dados.success) {
-      exibirProjetos(dados.projetos);
-    } else {
-      console.error("Erro na busca:", dados.error);
-      resultado.innerHTML = "<p>Erro na busca. Tente novamente.</p>";
+      const filtrados = dados.data.filter(item => 
+        item.nome.toLowerCase().includes(termo.toLowerCase()) ||
+        item.email.toLowerCase().includes(termo.toLowerCase())
+      );
+      
+      const projetosConvertidos = converterDadosParaProjetos(filtrados, categoriaAtual);
+      exibirProjetos(projetosConvertidos);
     }
   } catch (erro) {
-    console.error("Erro ao buscar projetos:", erro);
-    resultado.innerHTML = "<p>Erro de conexão na busca.</p>";
+    console.error("Erro na busca:", erro);
+    buscarProjetos(categoriaAtual); // fallback
   }
 }
 
-// Função para exibir projetos na tela
+// Função para exibir projetos (MANTIDA IGUAL)
 function exibirProjetos(projetos) {
   resultado.innerHTML = "";
   
@@ -65,17 +127,16 @@ function exibirProjetos(projetos) {
     const novo_card = document.createElement("div");
     novo_card.className = "card";
     
-    // Determinar cor baseada no tipo de projeto
     let corTipo = "";
     switch(projeto.tipo) {
       case 'comercial':
-        corTipo = "#2E8B57"; // Verde
+        corTipo = "#2E8B57";
         break;
       case 'secreto':
-        corTipo = "#B22222"; // Vermelho
+        corTipo = "#B22222";
         break;
       case 'publico':
-        corTipo = "#1E90FF"; // Azul
+        corTipo = "#1E90FF";
         break;
       default:
         corTipo = "#666";
@@ -96,24 +157,20 @@ function exibirProjetos(projetos) {
   });
 }
 
-// Evento de input na barra de pesquisa
+// Eventos (MANTIDOS IGUAIS)
 pesquisa.addEventListener("input", (e) => {
   buscarProjetosPorTermo(e.target.value);
 });
 
-// Eventos para as abas de navegação
 abas.forEach(aba => {
   aba.addEventListener("click", (e) => {
     e.preventDefault();
     
-    // Atualiza a aba ativa
     abas.forEach(a => a.classList.remove("ativa"));
     aba.classList.add("ativa");
     
-    // Atualiza a categoria e busca os projetos
     categoriaAtual = aba.getAttribute("data-categoria");
     
-    // Atualiza o título da categoria
     const titulos = {
       "comercial": "Projetos Comerciais",
       "secreto": "Projetos Secretos",
@@ -122,13 +179,11 @@ abas.forEach(aba => {
     };
     
     tituloCategoria.textContent = titulos[categoriaAtual];
-    
-    // Busca os projetos da categoria selecionada
     buscarProjetos(categoriaAtual);
   });
 });
 
-// Carrega os projetos ao iniciar
+// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
 });
