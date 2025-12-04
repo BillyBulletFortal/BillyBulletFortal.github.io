@@ -4,7 +4,7 @@ const tituloCategoria = document.querySelector("#titulo-categoria");
 const abas = document.querySelectorAll(".aba");
 
 let categoriaAtual = "comercial";
-const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+const API_BASE = 'https://billybulletfortal-github-io-1.onrender.com/api';
 
 // Mapeamento de tipos para compatibilidade
 const tipoMapping = {
@@ -17,28 +17,42 @@ const tipoMapping = {
 // Função adaptada para buscar da API existente
 async function buscarProjetos(categoria = "comercial") {
   try {
-    // Se for "todos", busca todos os dados
     const url = categoria === 'todos' 
-      ? `${API_BASE_URL}/data`
-      : `${API_BASE_URL}/data`;
+      ? `${API_BASE}/projetos`
+      : `${API_BASE}/projetos?tipo=${categoria}`;
+
+    console.log(`🔗 Buscando: ${url}`);
     
     const resposta = await fetch(url);
+    
+    if (!resposta.ok) {
+      throw new Error(`API retornou status ${resposta.status}`);
+    }
+    
     const dados = await resposta.json();
+    console.log("📦 Dados recebidos:", dados);
     
     if (dados.success) {
-      // Converte dados da API para formato esperado pelo frontend
-      const projetosConvertidos = converterDadosParaProjetos(dados.data, categoria);
-      exibirProjetos(projetosConvertidos);
+      exibirProjetos(dados.projetos);
     } else {
       console.error("Erro na API:", dados.error);
-      resultado.innerHTML = "<p>Erro ao carregar dados. Tente novamente mais tarde.</p>";
+      resultado.innerHTML = `<p>Erro na API: ${dados.error || 'Desconhecido'}</p>`;
     }
   } catch (erro) {
-    console.error("Erro ao buscar dados:", erro);
-    resultado.innerHTML = "<p>Erro de conexão. Verifique se a API está rodando.</p>";
+    console.error("Erro ao buscar projetos:", erro);
+    resultado.innerHTML = `
+      <div class="error">
+        <p>⚠️ Erro de conexão com a API</p>
+        <p><small>${erro.message}</small></p>
+        <button onclick="buscarProjetos('${categoria}')">🔄 Tentar novamente</button>
+        <p class="small">
+          API Status: <a href="${API_BASE}/health" target="_blank">Testar</a> | 
+          Projetos: <a href="${API_BASE}/projetos" target="_blank">Ver JSON</a>
+        </p>
+      </div>
+    `;
   }
 }
-
 // Converte dados da API (nome, email) para formato de projetos
 function converterDadosParaProjetos(dados, categoriaFiltro) {
   if (!dados || !Array.isArray(dados)) return [];
@@ -187,3 +201,4 @@ abas.forEach(aba => {
 document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
 });
+
