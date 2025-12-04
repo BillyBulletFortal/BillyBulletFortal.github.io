@@ -6,270 +6,232 @@ import atexit
 
 app = Flask(__name__)
 
-# CORS mais seguro - permita apenas seu domínio GitHub Pages
+# CORS - permitir seu domínio GitHub Pages
 CORS(app, origins=[
     "https://billybulletfortal.github.io",
-    "http://localhost:8000",  # Para testes locais
+    "http://localhost:8000",
     "http://127.0.0.1:8000"
 ])
 
-# SOLUÇÃO PARA RENDER: SQLite em memória (dados temporários)
-# No Render Free, arquivos são perdidos. Use memória ou PostgreSQL
-USE_IN_MEMORY_DB = True  # Mude para False se configurar PostgreSQL depois
-
-if USE_IN_MEMORY_DB:
-    DATABASE = ':memory:'  # Banco em memória (dados perdidos ao reiniciar)
-    print("⚠️  USANDO BANCO EM MEMÓRIA - Dados serão perdidos após reinício")
-else:
-    DATABASE = '/tmp/database.db'  # Pasta temporária no Render
-
-# Conexão global para o banco em memória
+# Banco em memória para Render Free
+USE_IN_MEMORY_DB = True
+DATABASE = ':memory:' if USE_IN_MEMORY_DB else '/tmp/database.db'
 conn = None
+db_initialized = False
 
-def get_db_connection():
-    """Cria ou retorna conexão com o banco de dados"""
-    global conn
+def init_db():
+    """Inicializa o banco de dados uma vez"""
+    global conn, db_initialized
+    
+    if db_initialized and conn:
+        return conn
+    
+    print("🔧 Inicializando banco de dados...")
     
     if USE_IN_MEMORY_DB:
-        if conn is None:
-            conn = sqlite3.connect(DATABASE, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            init_db(conn)
-        return conn
-    else:
-        # Para arquivo em disco
         conn = sqlite3.connect(DATABASE, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        if not os.path.exists(DATABASE):
-            init_db(conn)
-        return conn
-
-def init_db(connection):
-    """Inicializa o banco de dados com tabela e dados de exemplo"""
-    cursor = connection.cursor()
+    else:
+        conn = sqlite3.connect(DATABASE, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
     
-    # Tabela conforme esperado pelo frontend
+    cursor = conn.cursor()
+    
+    # TABELA DE PROJETOS
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS registros (
+        CREATE TABLE IF NOT EXISTS projetos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            email TEXT NOT NULL,
+            descricao TEXT NOT NULL,
+            tipo TEXT NOT NULL CHECK(tipo IN ('comercial', 'secreto', 'publico')),
+            nivel_acesso TEXT NOT NULL,
             data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
-    # Verifica se já existem dados
-    cursor.execute("SELECT COUNT(*) as count FROM registros")
+    # Insere dados de exemplo se tabela estiver vazia
+    cursor.execute("SELECT COUNT(*) as count FROM projetos")
     count = cursor.fetchone()[0]
     
-    # Insere dados iniciais apenas se tabela estiver vazia
     if count == 0:
-        cursor.execute("INSERT INTO registros (nome, email) VALUES (?, ?)", 
-                      ('João Silva', 'joao@exemplo.com'))
-        cursor.execute("INSERT INTO registros (nome, email) VALUES (?, ?)", 
-                      ('Maria Santos', 'maria@exemplo.com'))
-        connection.commit()
-        print(f"✅ Banco inicializado com {cursor.rowcount} registros")
+        projetos_exemplo = [
+            ("Site E-commerce", "Loja virtual completa com carrinho de compras", "comercial", "Restrito"),
+            ("Sistema de Gestão", "ERP para controle empresarial", "comercial", "Restrito"),
+            ("Projeto Alpha", "Desenvolvimento de IA avançada", "secreto", "Confidencial"),
+            ("Portal do Cidadão", "Sistema de serviços públicos online", "publico", "Público"),
+            ("App Mobile", "Aplicativo para dispositivos móveis", "comercial", "Restrito"),
+            ("Pesquisa Científica", "Estudo sobre novas tecnologias", "publico", "Público"),
+            ("Sistema de Segurança", "Controle de acesso e monitoramento", "secreto", "Confidencial"),
+            ("Plataforma Educacional", "Cursos online e aprendizagem", "publico", "Público")
+        ]
+        
+        for projeto in projetos_exemplo:
+            cursor.execute(
+                "INSERT INTO projetos (nome, descricao, tipo, nivel_acesso) VALUES (?, ?, ?, ?)",
+                projeto
+            )
+        
+        conn.commit()
+        print(f"✅ Banco inicializado com {len(projetos_exemplo)} projetos")
+    else:
+        print(f"📊 Banco já contém {count} projetos")
     
-    return connection
+    db_initialized = True
+    return conn
 
-# Fechar conexão ao encerrar
+def get_db_connection():
+    """Retorna conexão com o banco, inicializando se necessário"""
+    global conn
+    if conn is None:
+        return init_db()
+    return conn
+
+# Fechar conexão
 def close_connection():
+    global conn
     if conn:
         conn.close()
-        print("Conexão com banco de dados fechada")
+        print("🔌 Conexão com banco de dados fechada")
 
 atexit.register(close_connection)
 
-# Rota para verificar se API está rodando
+# Rota para verificar status
 @app.route('/')
 def index():
     return jsonify({
-        "status": "API está rodando", 
-        "service": "BillyBulletFortal Backend",
+        "status": "API de Projetos está rodando",
+        "service": "BillyBulletFortal API",
         "endpoints": {
-            "GET /api/data": "Obter todos registros",
-            "POST /api/update": "Adicionar novo registro",
-            "GET /api/init-db": "Reinicializar banco de dados",
+            "GET /api/projetos": "Obter todos projetos",
+            "GET /api/projetos?tipo={tipo}": "Filtrar por tipo",
+            "GET /api/projetos/buscar?termo={termo}": "Buscar por termo",
+            "POST /api/projetos": "Adicionar novo projeto",
             "GET /api/health": "Verificar saúde da API"
         },
-        "database_type": "SQLite em memória" if USE_IN_MEMORY_DB else "SQLite em arquivo"
+        "note": "Render Free Tier - pode levar 30s para iniciar na primeira vez"
     })
 
-# Rota GET para obter dados - EXATAMENTE O QUE O FRONTEND ESPERA
-@app.route('/api/data', methods=['GET'])
-def get_data():
+# Middleware para inicializar DB na primeira requisição
+@app.before_request
+def initialize_on_first_request():
+    """Inicializa o banco na primeira requisição recebida"""
+    global db_initialized
+    if not db_initialized:
+        init_db()
+
+# ENDPOINT PRINCIPAL: /api/projetos - GET (com filtro por tipo)
+@app.route('/api/projetos', methods=['GET'])
+def get_projetos():
     try:
+        tipo = request.args.get('tipo', '').lower()
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM registros ORDER BY id DESC")
-        registros = cursor.fetchall()
+        if tipo and tipo in ['comercial', 'secreto', 'publico']:
+            cursor.execute("SELECT * FROM projetos WHERE tipo = ? ORDER BY id DESC", (tipo,))
+        else:
+            cursor.execute("SELECT * FROM projetos ORDER BY id DESC")
+        
+        projetos = cursor.fetchall()
         
         # Converte para lista de dicionários
         resultado = []
-        for registro in registros:
-            # Converte sqlite3.Row para dict
-            resultado.append({key: registro[key] for key in registro.keys()})
+        for projeto in projetos:
+            resultado.append({
+                "id": projeto['id'],
+                "nome": projeto['nome'],
+                "descricao": projeto['descricao'],
+                "tipo": projeto['tipo'],
+                "nivel_acesso": projeto['nivel_acesso'],
+                "data_criacao": projeto['data_criacao']
+            })
         
-        # NÃO fecha conexão se for em memória!
-        if not USE_IN_MEMORY_DB:
-            conn.close()
-        
-        print(f"📊 GET /api/data: Retornando {len(resultado)} registros")
+        print(f"📊 GET /api/projetos - tipo: '{tipo}' - encontrados: {len(resultado)}")
         
         return jsonify({
             "success": True,
             "count": len(resultado),
-            "data": resultado
+            "projetos": resultado
         })
     
     except Exception as e:
-        print(f"❌ ERRO em /api/data: {str(e)}")
+        print(f"❌ ERRO em /api/projetos: {str(e)}")
         return jsonify({
             "success": False,
-            "error": "Erro ao buscar dados do banco",
-            "details": str(e) if os.environ.get('FLASK_ENV') == 'development' else None
+            "error": "Erro ao buscar projetos"
         }), 500
 
-# Rota POST para atualizar dados - EXATAMENTE O QUE O FRONTEND ESPERA
-@app.route('/api/update', methods=['POST'])
-def update_data():
+# ENDPOINT DE BUSCA: /api/projetos/buscar - GET
+@app.route('/api/projetos/buscar', methods=['GET'])
+def buscar_projetos():
     try:
-        # Log da requisição
-        print(f"📝 Recebendo POST /api/update")
+        termo = request.args.get('termo', '').strip()
         
-        data = request.get_json()
-        
-        if not data:
-            print("❌ Nenhum JSON recebido")
+        if not termo:
             return jsonify({
-                "success": False,
-                "error": "Nenhum dado recebido. Envie JSON com 'nome' e 'email'"
-            }), 400
-        
-        print(f"📦 Dados recebidos: {data}")
-        
-        # Validação básica
-        if 'nome' not in data or 'email' not in data:
-            print(f"❌ Campos faltando. Recebido: {list(data.keys())}")
-            return jsonify({
-                "success": False,
-                "error": "Campos 'nome' e 'email' são obrigatórios",
-                "received": list(data.keys())
-            }), 400
-        
-        nome = data['nome']
-        email = data['email']
-        
-        # Validação simples
-        if not nome.strip() or not email.strip():
-            return jsonify({
-                "success": False,
-                "error": "Nome e email não podem estar vazios"
-            }), 400
+                "success": True,
+                "projetos": [],
+                "count": 0
+            })
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Insere novo registro
-        cursor.execute(
-            "INSERT INTO registros (nome, email) VALUES (?, ?)",
-            (nome.strip(), email.strip())
-        )
+        cursor.execute('''
+            SELECT * FROM projetos 
+            WHERE LOWER(nome) LIKE ? OR LOWER(descricao) LIKE ? 
+            ORDER BY id DESC
+        ''', (f'%{termo.lower()}%', f'%{termo.lower()}%'))
         
-        conn.commit()
+        projetos = cursor.fetchall()
         
-        # Pega o ID do novo registro
-        novo_id = cursor.lastrowid
+        resultado = []
+        for projeto in projetos:
+            resultado.append({
+                "id": projeto['id'],
+                "nome": projeto['nome'],
+                "descricao": projeto['descricao'],
+                "tipo": projeto['tipo'],
+                "nivel_acesso": projeto['nivel_acesso']
+            })
         
-        # Busca o registro inserido
-        cursor.execute("SELECT * FROM registros WHERE id = ?", (novo_id,))
-        novo_registro = cursor.fetchone()
-        
-        # NÃO fecha conexão se for em memória!
-        if not USE_IN_MEMORY_DB:
-            conn.close()
-        
-        resultado = {key: novo_registro[key] for key in novo_registro.keys()} if novo_registro else None
-        
-        print(f"✅ Registro inserido com ID: {novo_id}")
+        print(f"🔍 GET /api/projetos/buscar - termo: '{termo}' - encontrados: {len(resultado)}")
         
         return jsonify({
             "success": True,
-            "message": "Dados atualizados com sucesso",
-            "id": novo_id,
-            "data": resultado
+            "count": len(resultado),
+            "projetos": resultado
         })
     
     except Exception as e:
-        print(f"❌ ERRO em /api/update: {str(e)}")
+        print(f"❌ ERRO em /api/projetos/buscar: {str(e)}")
         return jsonify({
             "success": False,
-            "error": "Erro ao salvar dados",
-            "details": str(e) if os.environ.get('FLASK_ENV') == 'development' else None
+            "error": "Erro na busca"
         }), 500
 
-# Rota para criar/reiniciar o banco
-@app.route('/api/init-db', methods=['GET'])
-def init_database():
-    try:
-        global conn
-        
-        # Fecha conexão existente se houver
-        if conn:
-            conn.close()
-            conn = None
-        
-        # Cria nova conexão (que irá inicializar o banco)
-        conn = get_db_connection()
-        
-        print("✅ Banco de dados reinicializado")
-        
-        return jsonify({
-            "success": True,
-            "message": "Banco de dados reinicializado",
-            "database": DATABASE
-        })
-    except Exception as e:
-        print(f"❌ ERRO em /api/init-db: {str(e)}")
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-# Rota de saúde da API
+# Rota de saúde
 @app.route('/api/health', methods=['GET'])
 def health_check():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT 1")
-        db_ok = cursor.fetchone()[0] == 1
-        
-        if not USE_IN_MEMORY_DB:
-            conn.close()
+        cursor.execute("SELECT COUNT(*) FROM projetos")
+        count = cursor.fetchone()[0]
         
         return jsonify({
             "status": "healthy",
-            "database": "connected" if db_ok else "disconnected",
-            "timestamp": os.environ.get('RENDER_TIMESTAMP', 'unknown'),
-            "service_id": os.environ.get('RENDER_SERVICE_ID', 'local')
+            "projetos_count": count,
+            "service": "billybulletfortal-github-io-1",
+            "database": "SQLite em memória" if USE_IN_MEMORY_DB else "SQLite em arquivo",
+            "initialized": db_initialized
         })
     except Exception as e:
         return jsonify({
             "status": "unhealthy",
-            "database": "error",
             "error": str(e)
         }), 500
-
-# Inicializa o banco quando o app iniciar
-@app.before_first_request
-def initialize():
-    print("🚀 Inicializando aplicação Flask...")
-    print(f"🔧 Modo: {'Desenvolvimento' if app.debug else 'Produção'}")
-    print(f"🗄️  Banco de dados: {'Memória' if USE_IN_MEMORY_DB else 'Arquivo'}")
-    print(f"🌐 CORS permitido para: https://billybulletfortal.github.io")
 
 # Handler para erro 404
 @app.errorhandler(404)
@@ -277,16 +239,22 @@ def not_found(error):
     return jsonify({
         "success": False,
         "error": "Endpoint não encontrado",
-        "available_endpoints": ["/", "/api/data", "/api/update", "/api/init-db", "/api/health"]
+        "available_endpoints": ["/", "/api/projetos", "/api/projetos/buscar", "/api/health"]
     }), 404
 
 if __name__ == '__main__':
-    # Obtém a porta do ambiente (Render fornece via variável PORT)
+    # Inicializa o banco antes de iniciar o servidor
+    init_db()
+    
     port = int(os.environ.get('PORT', 5000))
     
-    print(f"🚀 Iniciando servidor na porta {port}...")
-    print(f"🔗 URL da API: https://billybulletfortal-github-io-1.onrender.com")
-    print(f"📞 Endpoint principal: https://billybulletfortal-github-io-1.onrender.com/api/data")
+    print("=" * 50)
+    print("🚀 Iniciando API de Projetos - BillyBulletFortal")
+    print(f"🔗 URL: https://billybulletfortal-github-io-1.onrender.com")
+    print(f"📁 Endpoint principal: /api/projetos")
+    print(f"🩺 Health check: /api/health")
+    print(f"🔧 Banco de dados: {'Memória' if USE_IN_MEMORY_DB else 'Arquivo'}")
+    print(f"🌐 CORS permitido para: https://billybulletfortal.github.io")
     print("=" * 50)
     
     app.run(host='0.0.0.0', port=port, debug=False)
