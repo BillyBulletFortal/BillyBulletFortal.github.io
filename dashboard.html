@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Wayne Industries</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏭 Indústrias Wayne</h1>
+            <p class="subtitle">Dashboard do Sistema</p>
+            <div style="text-align: right; margin-top: 10px;">
+                <span id="userGreeting"></span>
+                <button onclick="auth.logout()" class="btn" style="margin-left: 10px;">Sair</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Bem-vindo ao Sistema</h2>
+                <p id="userInfo">Carregando informações...</p>
+                
+                <div class="roles">
+                    <h3>Suas Permissões:</h3>
+                    <div id="permissionsList"></div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Áreas de Acesso</h3>
+                <div class="roles">
+                    <div class="role" id="salesArea">
+                        <strong>👨‍💼 Área do Vendedor</strong>
+                        <p>Clientes e relatórios de vendas</p>
+                        <button class="btn" onclick="accessArea('vendedor')">Acessar</button>
+                    </div>
+                    
+                    <div class="role" id="managerArea">
+                        <strong>👔 Área do Gerente</strong>
+                        <p>Relatórios de desempenho</p>
+                        <button class="btn" onclick="accessArea('gerente')">Acessar</button>
+                    </div>
+                    
+                    <div class="role" id="engineerArea">
+                        <strong>🔧 Área do Engenheiro</strong>
+                        <p>Projetos e especificações</p>
+                        <button class="btn" onclick="accessArea('engenheiro')">Acessar</button>
+                    </div>
+                    
+                    <div class="role" id="adminArea">
+                        <strong>🛡️ Área do Administrador</strong>
+                        <p>Gerenciamento completo</p>
+                        <button class="btn" onclick="accessArea('admin_projeto')">Acessar</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Sistema desenvolvido para fins educacionais</p>
+        </footer>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
