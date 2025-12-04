@@ -1,0 +1,14 @@
+version: "1"
+services:
+  - type: web
+    name: billybulletfortal-api
+    runtime: python
+    repo: https://github.com/BillyBulletFortal/BillyBulletFortal.github.io
+    plan: free
+    region: virginia
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
