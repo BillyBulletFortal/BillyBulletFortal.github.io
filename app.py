@@ -1,206 +1,155 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
 import os
 
 app = Flask(__name__)
-# Configuração CORS simplificada e eficaz
-CORS(app)
+CORS(app)  # Permitir requisições do GitHub Pages
 
-# Configurações para acessar o banco de dados em um provedor gratuito
-DATABASE = os.path.join(os.getcwd(), 'wayne_industries.db')
-
-def get_db_connection():
-    """Cria conexão com o banco de dados"""
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Configuração do banco de dados
+DATABASE = 'database.db'
 
 def init_db():
-    """Inicializa o banco de dados com tabelas e dados iniciais"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # Criar tabela de projetos
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS projetos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            descricao TEXT NOT NULL,
-            tipo TEXT NOT NULL,
-            nivel_acesso TEXT NOT NULL,
-            status TEXT DEFAULT 'ativo',
-            data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Verificar se já existem dados
-    cursor.execute("SELECT COUNT(*) as count FROM projetos")
-    count = cursor.fetchone()['count']
-    
-    # Inserir dados apenas se a tabela estiver vazia
-    if count == 0:
-        projetos_iniciais = [
-            # Projetos Comerciais
-            ('Sistema de Vigilância Urbana GCPD', 'Rede de monitoramento em tempo real para o departamento de polícia de Gotham', 'comercial', 'publico'),
-            ('Bat-Computador Empresarial Series X', 'Workstations de alta performance para análise de dados corporativos', 'comercial', 'publico'),
-            ('Sistema de Comunicação Criptografada', 'Rede segura para comunicações corporativas e governamentais', 'comercial', 'gerente'),
-            ('Equipamento de Emergência Médica', 'Kits de primeiros socorros avançados para hospitais e instituições', 'comercial', 'publico'),
-            
-            # Projetos Secretos
-            ('Tecnologia de Defesa Pessoal - Projeto Nighthawk', 'Sistemas defensivos avançados com materiais compostos experimentais', 'secreto', 'administrador'),
-            ('Veículo de Resposta Rápida - Protótipo 01', 'Plataforma móvel multi-terreno com sistemas de ocultação', 'secreto', 'administrador'),
-            ('Análise de Inteligência Criminal - Sistema Oracle', 'Algoritmo preditivo para análise de padrões criminais em Gotham', 'secreto', 'administrador'),
-            ('Sistema de Energia Portátil - Célula Wayne', 'Fonte de energia de alta densidade para aplicações táticas', 'secreto', 'administrador'),
-            
-            # Projetos Públicos
-            ('Projeto Orfanato Thomas & Martha Wayne', 'Iniciativa social para educação e desenvolvimento de jovens', 'publico', 'publico'),
-            ('Fundação Wayne para Ciência e Tecnologia', 'Bolsa de estudos para jovens talentos em STEM', 'publico', 'publico'),
-            ('Programa de Renovação Urbana do Distrito de Caçamba', 'Reurbanização de áreas carentes de Gotham City', 'publico', 'publico'),
-            ('Centro Médico Martha Wayne', 'Hospital comunitário oferecendo serviços gratuitos', 'publico', 'publico')
-        ]
+    """Inicializa o banco de dados se não existir"""
+    if not os.path.exists(DATABASE):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS registros (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                email TEXT NOT NULL,
+                data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
-        cursor.executemany('''
-            INSERT INTO projetos (nome, descricao, tipo, nivel_acesso)
-            VALUES (?, ?, ?, ?)
-        ''', projetos_iniciais)
+        # Insere alguns dados iniciais (opcional)
+        cursor.execute("INSERT INTO registros (nome, email) VALUES (?, ?)", 
+                      ('Exemplo Usuário', 'exemplo@email.com'))
         
-        print(f"✅ {len(projetos_iniciais)} projetos inseridos no banco de dados!")
-    
-    conn.commit()
-    conn.close()
-    print("✅ Banco de dados inicializado com sucesso!")
+        conn.commit()
+        conn.close()
+        print(f"Banco de dados '{DATABASE}' criado com sucesso!")
 
-# Inicializar o banco de dados quando a aplicação iniciar
-with app.app_context():
-    init_db()
+def get_db_connection():
+    """Cria uma conexão com o banco de dados"""
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row  # Para retornar dicionários
+    return conn
 
-# ========== ROTAS DA API ==========
-
+# Rota para a página principal (opcional)
 @app.route('/')
-def home():
-    """Página inicial - serve o frontend"""
-    return send_from_directory('frontend', 'index.html')
+def index():
+    return jsonify({"status": "API está rodando", "mensagem": "Use /api/data para obter dados"})
 
-@app.route('/<path:path>')
-def serve_static(path):
-    """Serve arquivos estáticos (CSS, JS)"""
-    return send_from_directory('frontend', path)
-
-@app.route('/api/status')
-def status():
-    """Endpoint para verificar status do sistema"""
+# Rota GET para obter dados - EXATAMENTE O QUE O FRONTEND ESPERA
+@app.route('/api/data', methods=['GET'])
+def get_data():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Contar projetos por tipo
-        cursor.execute("SELECT tipo, COUNT(*) as count FROM projetos GROUP BY tipo")
-        stats = cursor.fetchall()
+        cursor.execute("SELECT * FROM registros ORDER BY id DESC")
+        registros = cursor.fetchall()
         
-        # Total de projetos
-        cursor.execute("SELECT COUNT(*) as total FROM projetos")
-        total = cursor.fetchone()['total']
+        # Converte para lista de dicionários
+        resultado = []
+        for registro in registros:
+            resultado.append(dict(registro))
         
-        conn.close()
-        
-        return jsonify({
-            "status": "online",
-            "database": DATABASE,
-            "projetos_total": total,
-            "estatisticas": {row['tipo']: row['count'] for row in stats},
-            "mensagem": "Sistema Wayne Industries operacional"
-        })
-        
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "error": str(e)
-        }), 500
-
-@app.route('/api/projetos', methods=['GET'])
-def get_projetos():
-    """Endpoint para listar projetos"""
-    try:
-        tipo = request.args.get('tipo', 'all')
-        conn = get_db_connection()
-        
-        if tipo == 'all':
-            cursor = conn.execute('SELECT * FROM projetos WHERE status = "ativo" ORDER BY nome')
-        else:
-            cursor = conn.execute('SELECT * FROM projetos WHERE tipo = ? AND status = "ativo" ORDER BY nome', (tipo,))
-        
-        projetos = [dict(row) for row in cursor.fetchall()]
         conn.close()
         
         return jsonify({
             "success": True,
-            "count": len(projetos),
-            "projetos": projetos
+            "data": resultado
         })
-        
+    
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
-@app.route('/api/projetos/buscar', methods=['GET'])
-def buscar_projetos():
-    """Endpoint para buscar projetos por termo"""
+# Rota POST para atualizar dados - EXATAMENTE O QUE O FRONTEND ESPERA
+@app.route('/api/update', methods=['POST'])
+def update_data():
     try:
-        termo = request.args.get('termo', '')
-        conn = get_db_connection()
+        data = request.get_json()
         
-        cursor = conn.execute('''
-            SELECT * FROM projetos 
-            WHERE (nome LIKE ? OR descricao LIKE ?) 
-            AND status = "ativo"
-            ORDER BY nome
-        ''', (f'%{termo}%', f'%{termo}%'))
-        
-        projetos = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        
-        return jsonify({
-            "success": True,
-            "count": len(projetos),
-            "projetos": projetos
-        })
-        
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
-
-@app.route('/api/projetos/<int:projeto_id>', methods=['GET'])
-def get_projeto(projeto_id):
-    """Endpoint para buscar um projeto específico"""
-    try:
-        conn = get_db_connection()
-        
-        cursor = conn.execute('SELECT * FROM projetos WHERE id = ?', (projeto_id,))
-        projeto = cursor.fetchone()
-        
-        conn.close()
-        
-        if projeto:
-            return jsonify({
-                "success": True,
-                "projeto": dict(projeto)
-            })
-        else:
+        if not data:
             return jsonify({
                 "success": False,
-                "error": "Projeto não encontrado"
-            }), 404
-            
+                "error": "Nenhum dado recebido"
+            }), 400
+        
+        # Validação básica
+        if 'nome' not in data or 'email' not in data:
+            return jsonify({
+                "success": False,
+                "error": "Campos 'nome' e 'email' são obrigatórios"
+            }), 400
+        
+        nome = data['nome']
+        email = data['email']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insere novo registro
+        cursor.execute(
+            "INSERT INTO registros (nome, email) VALUES (?, ?)",
+            (nome, email)
+        )
+        
+        conn.commit()
+        
+        # Pega o ID do novo registro
+        novo_id = cursor.lastrowid
+        
+        # Busca o registro inserido
+        cursor.execute("SELECT * FROM registros WHERE id = ?", (novo_id,))
+        novo_registro = cursor.fetchone()
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "Dados atualizados com sucesso",
+            "data": dict(novo_registro) if novo_registro else None
+        })
+    
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
+# Rota para criar a tabela manualmente (útil para testes)
+@app.route('/api/init-db', methods=['GET'])
+def init_database():
+    try:
+        init_db()
+        return jsonify({
+            "success": True,
+            "message": f"Banco de dados '{DATABASE}' inicializado"
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# Inicializa o banco quando o app iniciar
+@app.before_first_request
+def initialize():
+    init_db()
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Obtém a porta do ambiente (Render fornece via variável PORT)
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Inicia o servidor
+    print(f"Iniciando servidor na porta {port}...")
+    print(f"URL da API: entre api aqui")
+    
+    app.run(host='0.0.0.0', port=port, debug=False)
