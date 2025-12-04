@@ -109,25 +109,30 @@ async function buscarProjetosPorTermo(termo) {
   }
   
   try {
-    // Como a API atual não tem busca, filtramos localmente
-    const resposta = await fetch(`${API_BASE_URL}/data`);
+    const url = `${API_BASE}/projetos/buscar?termo=${encodeURIComponent(termo)}`;
+    console.log(`🔍 Buscando termo: ${termo} - URL: ${url}`);
+    
+    const resposta = await fetch(url);
+    
+    if (!resposta.ok) {
+      throw new Error(`Busca retornou status ${resposta.status}`);
+    }
+    
     const dados = await resposta.json();
     
     if (dados.success) {
-      const filtrados = dados.data.filter(item => 
-        item.nome.toLowerCase().includes(termo.toLowerCase()) ||
-        item.email.toLowerCase().includes(termo.toLowerCase())
-      );
-      
-      const projetosConvertidos = converterDadosParaProjetos(filtrados, categoriaAtual);
-      exibirProjetos(projetosConvertidos);
+      exibirProjetos(dados.projetos);
+    } else {
+      console.error("Erro na busca:", dados.error);
+      resultado.innerHTML = `<p>Erro na busca: ${dados.error || 'Desconhecido'}</p>`;
     }
   } catch (erro) {
-    console.error("Erro na busca:", erro);
-    buscarProjetos(categoriaAtual); // fallback
+    console.error("Erro ao buscar projetos:", erro);
+    resultado.innerHTML = `<p>Erro na busca: ${erro.message}</p>`;
+    // Fallback: mostrar todos
+    buscarProjetos(categoriaAtual);
   }
 }
-
 // Função para exibir projetos (MANTIDA IGUAL)
 function exibirProjetos(projetos) {
   resultado.innerHTML = "";
@@ -201,4 +206,5 @@ abas.forEach(aba => {
 document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
 });
+
 
