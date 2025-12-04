@@ -150,6 +150,7 @@ if __name__ == '__main__':
     
     # Inicia o servidor
     print(f"Iniciando servidor na porta {port}...")
-    print(f"URL da API: entre api aqui")
+    print(f"URL da API: https://billybulletfortal-github-io-1.onrender.com")
     
     app.run(host='0.0.0.0', port=port, debug=False)
+
