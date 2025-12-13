@@ -8,8 +8,8 @@
     <style>
         /* Estilos específicos para a página de login */
         .login-container {
-            max-width: 400px;
-            margin: 100px auto;
+            max-width: 450px;
+            margin: 80px auto;
             padding: 30px;
             border: 1px solid #ddd;
             border-radius: 10px;
@@ -19,13 +19,13 @@
         
         .login-container h2 {
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .login-input {
             width: 100%;
             padding: 12px;
-            margin: 10px 0;
+            margin: 8px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
@@ -41,7 +41,7 @@
             border-radius: 5px;
             font-size: 16px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         
         .login-button:hover {
@@ -52,68 +52,136 @@
             color: red;
             margin-top: 10px;
             display: none;
+            font-size: 14px;
         }
         
         .instructions {
             font-size: 14px;
             color: #666;
-            margin-top: 20px;
+            margin-top: 25px;
             text-align: left;
             padding: 15px;
             background-color: #f0f0f0;
             border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .user-type {
+            font-size: 13px;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>🔒 Acesso ao Sistema</h2>
-        <p>Digite a senha para acessar o trabalho de curso:</p>
+        <h2>🔒 Sistema de Autenticação</h2>
+        <p>Digite usuário e senha para acessar o trabalho de curso:</p>
         
-        <input type="password" id="password" class="login-input" placeholder="Digite a senha">
-        <button onclick="verificarSenha()" class="login-button">Acessar Sistema</button>
+        <input type="text" id="username" class="login-input" placeholder="Nome de usuário">
+        <input type="password" id="password" class="login-input" placeholder="Senha">
+        <button onclick="verificarLogin()" class="login-button">Acessar Sistema</button>
         
         <div id="errorMessage" class="error-message">
-            Senha incorreta. Tente novamente.
+            <!-- Mensagem de erro será inserida aqui -->
         </div>
         
         <div class="instructions">
-            <p><strong>Instruções para teste:</strong></p>
-            <p>Senha de teste: <code>curso2024</code></p>
+            <p><strong>senhas para teste do sistema:</strong></p>
+            <p><span class="user-type">[VENDEDOR]</span> usuario <strong>vendedor1</strong> tem senha <code>valetudo</code></p>
+            <p><span class="user-type">[GERENTE]</span> usuario <strong>gerente01</strong> tem senha <code>precisodeaumento</code></p>
+            <p><span class="user-type">[ADMIN SEGURANÇA]</span> usuario <strong>adminiseg1</strong> tem senha <code>bat1234</code></p>
             <p><em>Esta é uma página de demonstração para trabalho acadêmico. 
-            A senha está visível para fins de avaliação.</em></p>
+            As senhas estão visíveis para fins de avaliação.</em></p>
         </div>
     </div>
 
     <script>
-        // Senha fixa para teste (visível para o professor)
-        const SENHA_CORRETA = "curso2024";
+        // Base de usuários fixa (simulando "banco de dados")
+        const USUARIOS = {
+            "vendedor1": {
+                senha: "valetudo",
+                tipo: "VENDEDOR",
+                nome: "Vendedor 1"
+            },
+            "gerente01": {
+                senha: "precisodeaumento", 
+                tipo: "GERENTE",
+                nome: "Gerente 01"
+            },
+            "adminiseg1": {
+                senha: "bat1234",
+                tipo: "ADMINISTRADOR_SEGURANCA",
+                nome: "Administrador de Segurança 1"
+            }
+        };
         
-        function verificarSenha() {
-            const senhaDigitada = document.getElementById("password").value;
+        function verificarLogin() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
             const errorMessage = document.getElementById("errorMessage");
             
-            if (senhaDigitada === SENHA_CORRETA) {
-                // Senha correta - redireciona para o sistema
-                window.location.href = "sistema.html";
-            } else {
-                // Senha incorreta - mostra erro
+            // Limpa mensagem anterior
+            errorMessage.style.display = "none";
+            errorMessage.innerHTML = "";
+            
+            // Validações básicas
+            if (!username || !password) {
+                errorMessage.innerHTML = "Por favor, preencha usuário e senha.";
+                errorMessage.style.display = "block";
+                return;
+            }
+            
+            // Verifica se usuário existe
+            if (!USUARIOS[username]) {
+                errorMessage.innerHTML = "Usuário não encontrado.";
+                errorMessage.style.display = "block";
+                document.getElementById("password").value = "";
+                document.getElementById("username").focus();
+                return;
+            }
+            
+            // Verifica se senha está correta
+            if (USUARIOS[username].senha !== password) {
+                errorMessage.innerHTML = "Senha incorreta.";
                 errorMessage.style.display = "block";
                 document.getElementById("password").value = "";
                 document.getElementById("password").focus();
+                return;
             }
+            
+            // Login bem sucedido
+            // Vamos passar o tipo de usuário para a próxima página
+            const usuarioLogado = USUARIOS[username];
+            
+            // Armazena os dados do usuário na sessão
+            sessionStorage.setItem('usuarioLogado', JSON.stringify({
+                username: username,
+                tipo: usuarioLogado.tipo,
+                nome: usuarioLogado.nome
+            }));
+            
+            // Redireciona para o sistema
+            window.location.href = "sistema.html";
         }
         
         // Permitir pressionar Enter para enviar
         document.getElementById("password").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
-                verificarSenha();
+                verificarLogin();
             }
         });
         
-        // Focar no campo de senha ao carregar a página
+        document.getElementById("username").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                document.getElementById("password").focus();
+            }
+        });
+        
+        // Focar no campo de usuário ao carregar a página
         window.onload = function() {
-            document.getElementById("password").focus();
+            document.getElementById("username").focus();
         };
     </script>
 </body>
