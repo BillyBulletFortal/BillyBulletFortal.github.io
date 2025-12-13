@@ -1,3 +1,8 @@
+const USUARIOS = {
+    "vendedor1": { senha: "valetudo", tipo: "VENDEDOR" },
+    "gerente01": { senha: "precisodeaumento", tipo: "GERENTE" },
+    "adminiseg1": { senha: "bat1234", tipo: "ADMINISTRADOR_SEGURANCA" }
+};
 const resultado = document.querySelector("#resultado");
 const pesquisa = document.querySelector("#pesquisa");
 const tituloCategoria = document.querySelector("#titulo-categoria");
@@ -206,5 +211,6 @@ abas.forEach(aba => {
 document.addEventListener('DOMContentLoaded', function() {
   buscarProjetos(categoriaAtual);
 });
+
 
 
