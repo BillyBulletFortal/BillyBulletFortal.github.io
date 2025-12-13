@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso ao Sistema - Trabalho de Curso</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos para a página de login */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        
+        .login-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .login-button:hover {
+            background-color: #0056b3;
+        }
+        
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .instructions {
+            font-size: 14px;
+            color: #666;
+            margin-top: 20px;
+            text-align: left;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>🔒 Acesso ao Sistema</h2>
+        <p>Digite a senha para acessar o trabalho de curso:</p>
+        
+        <input type="password" id="password" class="login-input" placeholder="Digite a senha">
+        <button onclick="verificarSenha()" class="login-button">Acessar Sistema</button>
+        
+        <div id="errorMessage" class="error-message">
+            Senha incorreta. Tente novamente.
+        </div>
+        
+        <div class="instructions">
+            <p><strong>Instruções para teste:</strong></p>
+            <p>Senha de teste: <code>curso2024</code></p>
+            <p><em>Esta é uma página de demonstração para trabalho acadêmico. 
+            A senha está visível para fins de avaliação.</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Senha fixa para teste (visível para o professor)
+        const SENHA_CORRETA = "curso2024";
+        
+        function verificarSenha() {
+            const senhaDigitada = document.getElementById("password").value;
+            const errorMessage = document.getElementById("errorMessage");
+            
+            if (senhaDigitada === SENHA_CORRETA) {
+                // Senha correta - redireciona para o sistema
+                window.location.href = "sistema.html";
+            } else {
+                // Senha incorreta - mostra erro
+                errorMessage.style.display = "block";
+                document.getElementById("password").value = "";
+                document.getElementById("password").focus();
+            }
+        }
+        
+        // Permitir pressionar Enter para enviar
+        document.getElementById("password").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                verificarSenha();
+            }
+        });
+        
+        // Focar no campo de senha ao carregar a página
+        window.onload = function() {
+            document.getElementById("password").focus();
+        };
+    </script>
+</body>
+</html>
