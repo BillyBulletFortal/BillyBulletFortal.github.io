@@ -1,3 +1,15 @@
+/* Estilos da página de login */
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 30px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+
+/*  estilos  do sistema abaixo: */
 * {
   margin: 0;
   padding: 0;
@@ -228,3 +240,4 @@ h2 {
   margin-top: 10px;
 }
 }
+
