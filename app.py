@@ -14,7 +14,7 @@ CORS(app, origins=[
 ])
 
 # Banco em memória para Render Free
-USE_IN_MEMORY_DB = True
+USE_IN_MEMORY_DB = False
 DATABASE = ':memory:' if USE_IN_MEMORY_DB else '/tmp/database.db'
 conn = None
 db_initialized = False
