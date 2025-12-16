@@ -7,11 +7,14 @@ import atexit
 app = Flask(__name__)
 
 # CORS - permitir seu domínio GitHub Pages
+
 CORS(app, origins=[
     "https://billybulletfortal.github.io",
-    "http://localhost:8000",
+    "http://localhost:8000", 
     "http://127.0.0.1:8000"
 ])
+
+
 
 # Banco em memória para Render Free
 USE_IN_MEMORY_DB = False
