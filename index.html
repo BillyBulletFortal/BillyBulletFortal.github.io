@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso ao Sistema - Trabalho de Curso</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilos específicos para a página de login */
         .login-container {
             max-width: 450px;
             margin: 80px auto;
@@ -83,17 +82,14 @@
         <input type="password" id="password" class="login-input" placeholder="Senha">
         <button onclick="verificarLogin()" class="login-button">Acessar Sistema</button>
         
-        <div id="errorMessage" class="error-message">
-            <!-- Mensagem de erro será inserida aqui -->
-        </div>
+        <div id="errorMessage" class="error-message"></div>
         
         <div class="instructions">
             <p><strong>senhas para teste do sistema:</strong></p>
             <p><span class="user-type">[VENDEDOR]</span> usuario <strong>vendedor1</strong> tem senha <code>valetudo</code></p>
             <p><span class="user-type">[GERENTE]</span> usuario <strong>gerente01</strong> tem senha <code>precisodeaumento</code></p>
             <p><span class="user-type">[ADMIN SEGURANÇA]</span> usuario <strong>adminiseg1</strong> tem senha <code>bat1234</code></p>
-            <p><em>Esta é uma página de demonstração para trabalho acadêmico. 
-            As senhas estão visíveis para fins de avaliação.</em></p>
+            <p><em>Esta é uma página de demonstração para trabalho acadêmico.</em></p>
         </div>
     </div>
 
@@ -103,17 +99,20 @@
             "vendedor1": {
                 senha: "valetudo",
                 tipo: "VENDEDOR",
-                nome: "Vendedor 1"
+                nome: "Vendedor 1",
+                permissoes: ["projetos públicos"]
             },
             "gerente01": {
                 senha: "precisodeaumento", 
                 tipo: "GERENTE",
-                nome: "Gerente 01"
+                nome: "Gerente 01",
+                permissoes: ["projetos comerciais", "projetos públicos"]
             },
             "adminiseg1": {
                 senha: "bat1234",
                 tipo: "ADMINISTRADOR_SEGURANCA",
-                nome: "Administrador de Segurança 1"
+                nome: "Administrador de Segurança 1",
+                permissoes: ["todos os processos"]
             }
         };
         
@@ -151,15 +150,16 @@
                 return;
             }
             
-            // Login bem sucedido
-            // Vamos passar o tipo de usuário para a próxima página
+            // Login bem sucedido - Armazena TODAS as informações do usuário
             const usuarioLogado = USUARIOS[username];
             
-            // Armazena os dados do usuário na sessão
+            // Armazena os dados do usuário na sessionStorage
+            // APENAS UMA CHAVE será usada: 'usuarioLogado'
             sessionStorage.setItem('usuarioLogado', JSON.stringify({
                 username: username,
                 tipo: usuarioLogado.tipo,
-                nome: usuarioLogado.nome
+                nome: usuarioLogado.nome,
+                permissoes: usuarioLogado.permissoes
             }));
             
             // Redireciona para o sistema
