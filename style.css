@@ -1,7 +1,10 @@
-/* Estilos da página de login */
+/* ============================================
+   ESTILOS DA PÁGINA DE LOGIN
+   ============================================ */
+
 .login-container {
-    max-width: 400px;
-    margin: 100px auto;
+    max-width: 450px;
+    margin: 80px auto;
     padding: 30px;
     border: 1px solid #ddd;
     border-radius: 10px;
@@ -9,7 +12,66 @@
     text-align: center;
 }
 
-/*  estilos  do sistema abaixo: */
+.login-container h2 {
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.login-input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.login-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.login-button:hover {
+    background-color: #0056b3;
+}
+
+.login-error-message {
+    color: red;
+    margin-top: 10px;
+    display: none;
+    font-size: 14px;
+}
+
+.login-instructions {
+    font-size: 14px;
+    color: #666;
+    margin-top: 25px;
+    text-align: left;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
+}
+
+.login-user-type {
+    font-size: 13px;
+    color: #888;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* ============================================
+   ESTILOS DO SISTEMA (EXISTENTES + NOVOS)
+   ============================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -27,11 +89,40 @@ body {
   color: #000000;
 }
 
+/* Informações do usuário logado */
+#user-info {
+  background-color: #f8f9fa;
+  padding: 10px 15px;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 14px;
+  color: #495057;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+/* Mensagem de permissão do usuário */
+#mensagem-permissao {
+  background-color: #e9f7fe;
+  padding: 10px 15px;
+  margin: 10px 0 20px 0;
+  border-radius: 5px;
+  border-left: 4px solid #007bff;
+  font-size: 14px;
+  width: 100%;
+  max-width: 1200px;
+}
+
 header {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  max-width: 1200px;
   margin-bottom: 30px;
 }
 
@@ -39,7 +130,6 @@ header {
   max-width: 400px;
   width: 100%;
   margin-bottom: 30px;
-  
 }
 
 .navegacao {
@@ -176,6 +266,21 @@ h2 {
   font-style: italic;
 }
 
+/* Botão de logout */
+#user-info button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+#user-info button:hover {
+  background-color: #5a6268;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .resultado {
@@ -198,6 +303,11 @@ h2 {
   h2 {
     font-size: 24px;
   }
+  
+  .login-container {
+    margin: 40px auto;
+    padding: 20px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -210,6 +320,15 @@ h2 {
     gap: 10px;
     align-items: flex-start;
   }
+  
+  #user-info {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+}
+
+/* Estilos para mensagens de erro */
 .error {
   background: #fff8f8;
   border: 1px solid #ffcccc;
@@ -239,5 +358,3 @@ h2 {
   color: #666;
   margin-top: 10px;
 }
-}
-
