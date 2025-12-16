@@ -9,6 +9,76 @@
 </head>
 
 <body>
+  <script>
+    // Verificar se o usuário está logado
+    window.onload = function() {
+        const loggedIn = sessionStorage.getItem('loggedIn');
+        const userType = sessionStorage.getItem('userType');
+        const userName = sessionStorage.getItem('userName');
+        const permissions = JSON.parse(sessionStorage.getItem('permissions') || '[]');
+        
+        if (!loggedIn || loggedIn !== 'true') {
+            // Redirecionar para a página de login se não estiver logado
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        // Mostrar informações do usuário logado
+        console.log(`Usuário logado: ${userName} (${userType})`);
+        console.log(`Permissões: ${permissions.join(', ')}`);
+        
+        // Aqui você pode modificar a interface com base nas permissões
+        // Por exemplo, esconder ou mostrar elementos específicos
+        
+        // Adicionar informações do usuário na interface
+        const userInfoElement = document.createElement('div');
+        userInfoElement.style.cssText = `
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: right;
+            font-size: 14px;
+            border-bottom: 1px solid #0056b3;
+        `;
+        userInfoElement.innerHTML = `
+            Usuário: ${userName} (${userType}) | 
+            <a href="index.html" style="color: white; margin-left: 10px;">Sair</a>
+        `;
+        
+        // Inserir no início do body
+        document.body.insertBefore(userInfoElement, document.body.firstChild);
+        
+        // Aplicar permissões específicas
+        applyUserPermissions(userType, permissions);
+    };
+    
+    function applyUserPermissions(userType, permissions) {
+        // Esta função pode ser usada para modificar a interface
+        // com base no tipo de usuário e suas permissões
+        
+        console.log(`Aplicando permissões para ${userType}:`, permissions);
+        
+        // Exemplo: Mostrar apenas as seções permitidas
+        // Você precisará adaptar esta função à sua estrutura específica
+        
+        if (userType === 'vendedor') {
+            // Vendedor só vê projetos públicos
+            console.log('Vendedor: exibindo apenas projetos públicos');
+        } else if (userType === 'gerente') {
+            // Gerente vê projetos comerciais e públicos
+            console.log('Gerente: exibindo projetos comerciais e públicos');
+        } else if (userType === 'admin') {
+            // Admin vê tudo
+            console.log('Admin: exibindo todos os processos');
+        }
+    }
+    
+    // Função para logout
+    function logout() {
+        sessionStorage.clear();
+        window.location.href = 'index.html';
+    }
+</script>
   <header>
     <img class="logo" src="waynelogo.png" alt="Wayne Enterprises Logo">
     <nav class="navegacao">
@@ -30,4 +100,5 @@
 
 
 </html>
+
 
