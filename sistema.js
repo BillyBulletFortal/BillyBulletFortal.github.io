@@ -1,398 +1,341 @@
-// sistema.js - Trabalho de Curso com Autenticação ÚNICA e API
-document.addEventListener('DOMContentLoaded', function() {
-    // ============================================
-    // 1. VERIFICAÇÃO ÚNICA DE LOGIN
-    // ============================================
+// sistema.js - Sistema de Gerenciamento de Projetos com Controle de Acesso
+// Configurações
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+const TIPOS_PERMITIDOS = ['secreto', 'comercial', 'público'];
+
+// Estado da aplicação
+let usuarioLogado = null;
+let projetos = [];
+
+// Elementos DOM
+const projetosContainer = document.getElementById('projetos-container');
+const loadingElement = document.getElementById('loading');
+const mensagemElement = document.getElementById('mensagem');
+
+// ============================================
+// 1. FUNÇÕES DE AUTENTICAÇÃO E CONTROLE DE ACESSO
+// ============================================
+
+/**
+ * Configura o usuário logado (chamado após login)
+ * @param {Object} usuario - Objeto com dados do usuário
+ */
+function configurarUsuario(usuario) {
+    usuarioLogado = usuario;
+    console.log(`Usuário configurado: ${usuario.nome}, Tipo: ${usuario.tipo}`);
     
-    // Recupera os dados do usuário da sessionStorage
-    const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado'));
-    
-    // Se não houver usuário logado, volta para a página de login
-    if (!usuarioLogado) {
-        alert('Por favor, faça login primeiro.');
-        window.location.href = 'index.html';
-        return;
+    // Mostrar nome do usuário na interface (opcional)
+    const userBadge = document.getElementById('user-badge');
+    if (userBadge) {
+        userBadge.textContent = `${usuario.nome} (${usuario.tipo})`;
     }
-    
-    // ============================================
-    // 2. VARIÁVEIS GLOBAIS DA API
-    // ============================================
-    
-    const resultado = document.querySelector("#resultado");
-    const pesquisa = document.querySelector("#pesquisa");
-    const tituloCategoria = document.querySelector("#titulo-categoria");
-    const abas = document.querySelectorAll(".aba");
-    
-    let categoriaAtual = "comercial";
-    const API_BASE = 'https://billybulletfortal-github-io-1.onrender.com/api';
-    
-    // Mapeamento de tipos para compatibilidade
-    const tipoMapping = {
-        'comercial': 'comercial',
-        'secreto': 'secreto', 
-        'publico': 'publico',
-        'todos': ''
-    };
-    
-    // ============================================
-    // 3. APLICAR PERMISSÕES POR TIPO DE USUÁRIO
-    // ============================================
-    
-    function aplicarPermissoes() {
-        console.log(`Aplicando permissões para ${usuarioLogado.tipo}`);
+}
+
+/**
+ * Verifica se o usuário atual é administrador de segurança
+ * @returns {boolean} - True se for admin de segurança
+ */
+function isAdminSeguranca() {
+    return usuarioLogado && usuarioLogado.tipo === 'admin_seguranca';
+}
+
+/**
+ * Mostra mensagem de erro/sucesso
+ */
+function mostrarMensagem(texto, tipo = 'info') {
+    if (mensagemElement) {
+        mensagemElement.textContent = texto;
+        mensagemElement.className = `mensagem ${tipo}`;
+        mensagemElement.style.display = 'block';
         
-        // Para cada aba, verifica se o usuário tem permissão
-        abas.forEach(aba => {
-            const categoria = aba.getAttribute('data-categoria');
-            let permitido = false;
-            
-            // Verifica permissões baseado no tipo de usuário
-            if (usuarioLogado.tipo === 'VENDEDOR') {
-                permitido = (categoria === 'publico');
-            } else if (usuarioLogado.tipo === 'GERENTE') {
-                permitido = (categoria === 'comercial' || categoria === 'publico');
-            } else if (usuarioLogado.tipo === 'ADMINISTRADOR_SEGURANCA') {
-                permitido = true; // Admin vê tudo
-            }
-            
-            // Aplica ou remove a visibilidade
-            if (!permitido) {
-                aba.style.display = 'none';
-                console.log(`Ocultando aba: ${categoria}`);
-            } else {
-                aba.style.display = 'inline-block';
-            }
-        });
-        
-        // Mostra mensagem de permissão
-        mostrarMensagemPermissao();
+        setTimeout(() => {
+            mensagemElement.style.display = 'none';
+        }, 5000);
     }
-    
-    function mostrarMensagemPermissao() {
-        const mensagem = document.createElement('div');
-        mensagem.id = 'mensagem-permissao';
-        mensagem.style.cssText = `
-            background-color: #e9f7fe;
-            padding: 10px 15px;
-            margin: 10px;
-            border-radius: 5px;
-            border-left: 4px solid #007bff;
-            font-size: 14px;
-        `;
+}
+
+// ============================================
+// 2. FUNÇÕES PARA BUSCAR E RENDERIZAR PROJETOS
+// ============================================
+
+/**
+ * Busca projetos da API
+ */
+async function carregarProjetos() {
+    try {
+        if (loadingElement) loadingElement.style.display = 'block';
         
-        let texto = '';
-        if (usuarioLogado.tipo === 'VENDEDOR') {
-            texto = '🔸 PERFIL VENDEDOR: Você tem acesso apenas a "projetos públicos".';
-        } else if (usuarioLogado.tipo === 'GERENTE') {
-            texto = '🔷 PERFIL GERENTE: Você tem acesso a "projetos comerciais" e "projetos públicos".';
-        } else if (usuarioLogado.tipo === 'ADMINISTRADOR_SEGURANCA') {
-            texto = '🔴 ADMINISTRADOR DE SEGURANÇA: Você tem acesso a todos os processos.';
-        }
+        const response = await fetch(`${API_BASE_URL}/projetos`);
+        const data = await response.json();
         
-        mensagem.innerHTML = `<strong>${texto}</strong>`;
-        
-        // Insere a mensagem após o header
-        const header = document.querySelector('header');
-        if (header && header.nextSibling) {
-            header.parentNode.insertBefore(mensagem, header.nextSibling);
-        }
-    }
-    
-    // ============================================
-    // 4. MOSTRAR INFORMAÇÕES DO USUÁRIO
-    // ============================================
-    
-    function mostrarUsuarioLogado() {
-        const userInfoDiv = document.createElement('div');
-        userInfoDiv.id = 'user-info';
-        userInfoDiv.style.cssText = `
-            background-color: #f8f9fa;
-            padding: 10px 15px;
-            border-bottom: 1px solid #dee2e6;
-            font-size: 14px;
-            color: #495057;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        `;
-        
-        const userText = document.createElement('span');
-        userText.innerHTML = `👤 Logado como: <strong>${usuarioLogado.nome}</strong> (${usuarioLogado.tipo})`;
-        
-        const logoutBtn = document.createElement('button');
-        logoutBtn.textContent = 'Sair';
-        logoutBtn.style.cssText = `
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        `;
-        
-        logoutBtn.onclick = function() {
-            sessionStorage.removeItem('usuarioLogado');
-            window.location.href = 'index.html';
-        };
-        
-        userInfoDiv.appendChild(userText);
-        userInfoDiv.appendChild(logoutBtn);
-        
-        // Insere no início do body
-        document.body.insertBefore(userInfoDiv, document.body.firstChild);
-    }
-    
-    // ============================================
-    // 5. FUNÇÕES DA API (do código anterior)
-    // ============================================
-    
-    // Função adaptada para buscar da API existente
-    async function buscarProjetos(categoria = "comercial") {
-      try {
-        const url = categoria === 'todos' 
-          ? `${API_BASE}/projetos`
-          : `${API_BASE}/projetos?tipo=${categoria}`;
-    
-        console.log(`🔗 Buscando: ${url}`);
-        
-        const resposta = await fetch(url);
-        
-        if (!resposta.ok) {
-          throw new Error(`API retornou status ${resposta.status}`);
-        }
-        
-        const dados = await resposta.json();
-        console.log("📦 Dados recebidos:", dados);
-        
-        if (dados.success) {
-          exibirProjetos(dados.projetos);
+        if (data.success) {
+            projetos = data.projetos;
+            renderizarProjetos();
         } else {
-          console.error("Erro na API:", dados.error);
-          resultado.innerHTML = `<p>Erro na API: ${dados.error || 'Desconhecido'}</p>`;
+            mostrarMensagem('Erro ao carregar projetos', 'erro');
         }
-      } catch (erro) {
-        console.error("Erro ao buscar projetos:", erro);
-        resultado.innerHTML = `
-          <div class="error">
-            <p>⚠️ Erro de conexão com a API</p>
-            <p><small>${erro.message}</small></p>
-            <button onclick="buscarProjetos('${categoria}')">🔄 Tentar novamente</button>
-            <p class="small">
-              API Status: <a href="${API_BASE}/health" target="_blank">Testar</a> | 
-              Projetos: <a href="${API_BASE}/projetos" target="_blank">Ver JSON</a>
-            </p>
-          </div>
-        `;
-      }
+    } catch (error) {
+        console.error('Erro ao carregar projetos:', error);
+        mostrarMensagem('Erro de conexão com a API', 'erro');
+    } finally {
+        if (loadingElement) loadingElement.style.display = 'none';
+    }
+}
+
+/**
+ * Renderiza todos os projetos na tela
+ */
+function renderizarProjetos() {
+    if (!projetosContainer) return;
+    
+    projetosContainer.innerHTML = '';
+    
+    if (projetos.length === 0) {
+        projetosContainer.innerHTML = '<p class="sem-projetos">Nenhum projeto encontrado</p>';
+        return;
     }
     
-    // Busca simplificada (não suportada pela API atual)
-    async function buscarProjetosPorTermo(termo) {
-      if (termo.trim() === "") {
-        buscarProjetos(categoriaAtual);
-        return;
-      }
-      
-      try {
-        const url = `${API_BASE}/projetos/buscar?termo=${encodeURIComponent(termo)}`;
-        console.log(`🔍 Buscando termo: ${termo} - URL: ${url}`);
-        
-        const resposta = await fetch(url);
-        
-        if (!resposta.ok) {
-          throw new Error(`Busca retornou status ${resposta.status}`);
-        }
-        
-        const dados = await resposta.json();
-        
-        if (dados.success) {
-          exibirProjetos(dados.projetos);
-        } else {
-          console.error("Erro na busca:", dados.error);
-          resultado.innerHTML = `<p>Erro na busca: ${dados.error || 'Desconhecido'}</p>`;
-        }
-      } catch (erro) {
-        console.error("Erro ao buscar projetos:", erro);
-        resultado.innerHTML = `<p>Erro na busca: ${erro.message}</p>`;
-        // Fallback: mostrar todos
-        buscarProjetos(categoriaAtual);
-      }
-    }
+    projetos.forEach(projeto => {
+        const projetoCard = criarCardProjeto(projeto);
+        projetosContainer.appendChild(projetoCard);
+    });
+}
+
+/**
+ * Cria o card HTML para um projeto
+ */
+function criarCardProjeto(projeto) {
+    const card = document.createElement('div');
+    card.className = 'projeto-card';
+    card.dataset.id = projeto.id;
     
-    // Função para exibir projetos (MANTIDA IGUAL)
-    function exibirProjetos(projetos) {
-      resultado.innerHTML = "";
-      
-      if (projetos.length === 0) {
-        resultado.innerHTML = "<p>Nenhum projeto encontrado.</p>";
-        return;
-      }
-      
-      projetos.forEach((projeto) => {
-        const novo_card = document.createElement("div");
-        novo_card.className = "card";
-        
-        let corTipo = "";
-        switch(projeto.tipo) {
-          case 'comercial':
-            corTipo = "#2E8B57";
-            break;
-          case 'secreto':
-            corTipo = "#B22222";
-            break;
-          case 'publico':
-            corTipo = "#1E90FF";
-            break;
-          default:
-            corTipo = "#666";
-        }
-        
-        novo_card.innerHTML = `
-          <div class='informacoes'>
-            <h2>${projeto.nome}</h2>
-            <p class="descricao">${projeto.descricao}</p>
-            <div class="detalhes">
-              <span class="tipo-projeto" style="background-color: ${corTipo}">${projeto.tipo.toUpperCase()}</span>
-              <span class="nivel-acesso">Acesso: ${projeto.nivel_acesso}</span>
+    // Define cor baseada no tipo
+    const tipoClass = {
+        'secreto': 'tipo-secreto',
+        'comercial': 'tipo-comercial', 
+        'público': 'tipo-publico'
+    }[projeto.tipo] || '';
+    
+    card.innerHTML = `
+        <div class="projeto-header ${tipoClass}">
+            <h3 class="projeto-nome">${projeto.nome}</h3>
+            <span class="projeto-tipo">${projeto.tipo.toUpperCase()}</span>
+        </div>
+        <div class="projeto-body">
+            <p class="projeto-descricao">${projeto.descricao}</p>
+            <div class="projeto-info">
+                <span class="nivel-acesso">🔒 ${projeto.nivel_acesso}</span>
+                <span class="data-criacao">📅 ${formatarData(projeto.data_criacao)}</span>
             </div>
-          </div>
-        `;
+        </div>
+        <div class="projeto-footer">
+            <!-- Botão Alterar (visível apenas para admin_seguranca) -->
+            <button class="btn-alterar" onclick="iniciarEdicao(${projeto.id})">
+                ✏️ Alterar
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+/**
+ * Formata data para exibição
+ */
+function formatarData(dataString) {
+    if (!dataString) return 'Data desconhecida';
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR');
+}
+
+// ============================================
+// 3. FUNÇÕES DE EDIÇÃO (APENAS ADMIN_SEGURANCA)
+// ============================================
+
+/**
+ * Inicia o modo de edição para um projeto
+ */
+function iniciarEdicao(projetoId) {
+    // Verifica permissão
+    if (!isAdminSeguranca()) {
+        mostrarMensagem('❌ Não autorizado. Apenas administradores de segurança podem alterar projetos.', 'erro');
+        return;
+    }
+    
+    // Encontra o projeto
+    const projeto = projetos.find(p => p.id === projetoId);
+    if (!projeto) {
+        mostrarMensagem('Projeto não encontrado', 'erro');
+        return;
+    }
+    
+    // Encontra o card do projeto
+    const card = document.querySelector(`.projeto-card[data-id="${projetoId}"]`);
+    if (!card) return;
+    
+    // Substitui o conteúdo do card pelo formulário de edição
+    card.innerHTML = `
+        <div class="edicao-container">
+            <h4>✏️ Editando: ${projeto.nome}</h4>
+            
+            <div class="form-group">
+                <label for="descricao-${projetoId}">Nova Descrição:</label>
+                <textarea 
+                    id="descricao-${projetoId}" 
+                    class="campo-descricao"
+                    rows="3"
+                    maxlength="500"
+                >${projeto.descricao}</textarea>
+                <small class="contador-caracteres">0/500 caracteres</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="tipo-${projetoId}">Novo Tipo:</label>
+                <select id="tipo-${projetoId}" class="campo-tipo">
+                    ${TIPOS_PERMITIDOS.map(tipo => `
+                        <option value="${tipo}" ${tipo === projeto.tipo ? 'selected' : ''}>
+                            ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+            
+            <div class="botoes-edicao">
+                <button class="btn-salvar" onclick="salvarAlteracoes(${projetoId})">
+                    💾 Salvar Alterações
+                </button>
+                <button class="btn-cancelar" onclick="cancelarEdicao(${projetoId})">
+                    ❌ Cancelar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Configura contador de caracteres
+    const textarea = document.getElementById(`descricao-${projetoId}`);
+    const contador = card.querySelector('.contador-caracteres');
+    
+    textarea.addEventListener('input', function() {
+        contador.textContent = `${this.value.length}/500 caracteres`;
+    });
+    
+    // Inicializa contador
+    contador.textContent = `${textarea.value.length}/500 caracteres`;
+}
+
+/**
+ * Salva as alterações no servidor
+ */
+async function salvarAlteracoes(projetoId) {
+    if (!isAdminSeguranca()) {
+        mostrarMensagem('Permissão negada', 'erro');
+        return;
+    }
+    
+    const novaDescricao = document.getElementById(`descricao-${projetoId}`).value.trim();
+    const novoTipo = document.getElementById(`tipo-${projetoId}`).value;
+    
+    // Validações
+    if (!novaDescricao) {
+        mostrarMensagem('A descrição não pode estar vazia', 'erro');
+        return;
+    }
+    
+    if (!TIPOS_PERMITIDOS.includes(novoTipo)) {
+        mostrarMensagem('Tipo inválido selecionado', 'erro');
+        return;
+    }
+    
+    try {
+        mostrarMensagem('Salvando alterações...', 'info');
         
-        resultado.append(novo_card);
-      });
-    }
-    
-    // Converte dados da API (nome, email) para formato de projetos
-    function converterDadosParaProjetos(dados, categoriaFiltro) {
-      if (!dados || !Array.isArray(dados)) return [];
-      
-      // Mapeamento de nomes para tipos de projeto
-      const tipoPorNome = {
-        'joão': 'comercial',
-        'maria': 'publico', 
-        'exemplo': 'secreto'
-      };
-      
-      return dados
-        .filter(item => {
-          if (categoriaFiltro === 'todos') return true;
-          
-          const nomeLower = item.nome.toLowerCase();
-          // Determina tipo baseado no nome
-          for (const [key, tipo] of Object.entries(tipoPorNome)) {
-            if (nomeLower.includes(key)) {
-              return tipo === categoriaFiltro;
-            }
-          }
-          return categoriaFiltro === 'comercial'; // padrão
-        })
-        .map(item => ({
-          nome: item.nome || 'Projeto',
-          descricao: `Email: ${item.email || 'Não informado'} | Criado em: ${item.data_criacao || 'Data desconhecida'}`,
-          tipo: determinarTipo(item.nome),
-          nivel_acesso: determinarNivelAcesso(item.nome)
-        }));
-    }
-    
-    function determinarTipo(nome) {
-      const nomeLower = (nome || '').toLowerCase();
-      if (nomeLower.includes('joão')) return 'comercial';
-      if (nomeLower.includes('maria')) return 'publico';
-      if (nomeLower.includes('exemplo')) return 'secreto';
-      return 'comercial'; // padrão
-    }
-    
-    function determinarNivelAcesso(nome) {
-      const nomeLower = (nome || '').toLowerCase();
-      if (nomeLower.includes('joão')) return 'Restrito';
-      if (nomeLower.includes('maria')) return 'Público';
-      if (nomeLower.includes('exemplo')) return 'Confidencial';
-      return 'Restrito';
-    }
-    
-    // ============================================
-    // 6. CONFIGURAR EVENTOS DAS ABAS E PESQUISA
-    // ============================================
-    
-    function configurarEventos() {
-        // Evento de pesquisa
-        pesquisa.addEventListener("input", (e) => {
-            buscarProjetosPorTermo(e.target.value);
+        // ATENÇÃO: Você precisará implementar este endpoint no app.py
+        const response = await fetch(`${API_BASE_URL}/projetos/${projetoId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                descricao: novaDescricao,
+                tipo: novoTipo
+            })
         });
         
-        // Eventos das abas (somente para abas visíveis)
-        abas.forEach(aba => {
-            if (aba.style.display !== 'none') {
-                aba.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    
-                    // Remove classe ativa de todas as abas
-                    abas.forEach(a => a.classList.remove("ativa"));
-                    
-                    // Adiciona classe ativa na aba clicada
-                    aba.classList.add("ativa");
-                    
-                    // Atualiza categoria atual
-                    categoriaAtual = aba.getAttribute("data-categoria");
-                    
-                    // Atualiza título da categoria
-                    const titulos = {
-                        "comercial": "Projetos Comerciais",
-                        "secreto": "Projetos Secretos", 
-                        "publico": "Projetos Públicos",
-                        "todos": "Todos os Projetos"
-                    };
-                    
-                    tituloCategoria.textContent = titulos[categoriaAtual];
-                    
-                    // Busca projetos da nova categoria
-                    buscarProjetos(categoriaAtual);
-                });
+        const data = await.response.json();
+        
+        if (data.success) {
+            mostrarMensagem('✅ Alterações salvas com sucesso!', 'sucesso');
+            
+            // Atualiza o projeto localmente
+            const projetoIndex = projetos.findIndex(p => p.id === projetoId);
+            if (projetoIndex !== -1) {
+                projetos[projetoIndex].descricao = novaDescricao;
+                projetos[projetoIndex].tipo = novoTipo;
             }
-        });
+            
+            // Recarrega a lista (ou pode apenas atualizar o card específico)
+            carregarProjetos();
+        } else {
+            mostrarMensagem(`❌ Erro: ${data.error || 'Falha ao salvar'}`, 'erro');
+        }
+    } catch (error) {
+        console.error('Erro ao salvar:', error);
+        mostrarMensagem('❌ Erro de conexão ao salvar', 'erro');
+    }
+}
+
+/**
+ * Cancela a edição e volta ao card normal
+ */
+function cancelarEdicao(projetoId) {
+    // Encontra o projeto original
+    const projeto = projetos.find(p => p.id === projetoId);
+    if (!projeto) return;
+    
+    // Recria o card
+    const card = document.querySelector(`.projeto-card[data-id="${projetoId}"]`);
+    if (card) {
+        const novoCard = criarCardProjeto(projeto);
+        card.parentNode.replaceChild(novoCard, card);
     }
     
-    // ============================================
-    // 7. INICIALIZAÇÃO DO SISTEMA
-    // ============================================
+    mostrarMensagem('Edição cancelada', 'info');
+}
+
+// ============================================
+// 4. INICIALIZAÇÃO DO SISTEMA
+// ============================================
+
+/**
+ * Inicializa o sistema
+ */
+function inicializarSistema() {
+    console.log('Sistema de gerenciamento de projetos inicializando...');
     
-    function inicializarSistema() {
-        // 1. Mostra quem está logado
-        mostrarUsuarioLogado();
-        
-        // 2. Aplica as permissões
-        aplicarPermissoes();
-        
-        // 3. Configura os eventos
-        configurarEventos();
-        
-        // 4. Busca os projetos iniciais
-        console.log('Sistema inicializado para:', usuarioLogado.username);
-        buscarProjetos(categoriaAtual);
+    // 1. Verificar se há usuário logado (você precisa integrar com seu auth.js)
+    const usuarioSalvo = localStorage.getItem('usuario_logado');
+    if (usuarioSalvo) {
+        try {
+            configurarUsuario(JSON.parse(usuarioSalvo));
+        } catch (e) {
+            console.error('Erro ao parsear usuário:', e);
+        }
     }
     
-    // ============================================
-    // 8. FUNÇÕES GLOBAIS PARA DEBUG
-    // ============================================
+    // 2. Carregar projetos
+    carregarProjetos();
     
-    // Função para testar a API (acessível pelo console)
-    window.testarAPI = function() {
-        console.log('Testando API...');
-        fetch(`${API_BASE}/health`)
-            .then(r => r.json())
-            .then(data => console.log('Status API:', data))
-            .catch(err => console.error('Erro API:', err));
-    };
-    
-    window.recarregarProjetos = function() {
-        console.log('Recarregando projetos...');
-        buscarProjetos(categoriaAtual);
-    };
-    
-    // ============================================
-    // 9. INICIAR O SISTEMA
-    // ============================================
-    
-    inicializarSistema();
-});
+    // 3. Configurar eventos (se necessário)
+    configurarEventos();
+}
+
+/**
+ * Configura eventos adicionais
+ */
+function configurarEventos() {
+    // Exemplo: Botão para recarregar projetos
+    const btnRecarregar = document.getElementById('btn-recarregar');
+    if (btnRecarregar) {
+        btnRecarregar.addEventListener('click', carregarProjetos);
+    }
+}
