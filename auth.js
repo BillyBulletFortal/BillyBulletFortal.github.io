@@ -1,172 +1,87 @@
-// Sistema de Autenticação Básico
-// Usa localStorage como "banco de dados" simples
-// Para um sistema real, isso seria substituído por um backend
+// auth.js - Sistema de Autenticação via API
 
-class AuthSystem {
-    constructor() {
-        this.users = this.getUsersFromStorage();
-        this.currentUser = null;
-        this.ADMIN_CODE = "TrueLife"; // Código secreto para admin
-        
-        // Inicializar usuário padrão para teste
-        if (this.users.length === 0) {
-            this.createDefaultUsers();
-        }
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+
+async function verificarLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    const errorMessage = document.getElementById("errorMessage");
+    
+    // Limpa mensagem anterior
+    errorMessage.style.display = "none";
+    errorMessage.innerHTML = "";
+    
+    // Validações básicas
+    if (!username || !password) {
+        mostrarErro("Por favor, preencha usuário e senha.");
+        return;
     }
-
-    // Buscar usuários do localStorage
-    getUsersFromStorage() {
-        const usersJson = localStorage.getItem('wayne_users');
-        if (usersJson) {
-            return JSON.parse(usersJson);
-        }
-        return [];
-    }
-
-    // Salvar usuários no localStorage
-    saveUsersToStorage() {
-        localStorage.setItem('wayne_users', JSON.stringify(this.users));
-    }
-
-    // Criar usuários padrão para demonstração
-    createDefaultUsers() {
-        const defaultUsers = [
-            {
-                id: 1,
-                name: "Bruce Wayne",
-                email: "bruce@wayne.com",
-                password: "admin123", // Em sistema real, isso seria hasheado
-                role: "admin_projeto",
-                createdAt: new Date().toISOString()
+    
+    try {
+        // 1. Faz login na API
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             },
-            {
-                id: 2,
-                name: "Lucius Fox",
-                email: "lucius@wayne.com",
-                password: "eng123",
-                role: "engenheiro",
-                createdAt: new Date().toISOString()
-            }
-        ];
-
-        this.users = defaultUsers;
-        this.saveUsersToStorage();
-    }
-
-    // Login simples
-    login(email, password) {
-        // Buscar usuário pelo email
-        const user = this.users.find(u => u.email === email);
+            body: JSON.stringify({
+                username: username,
+                senha: password
+            })
+        });
         
-        if (!user) {
-            return {
-                success: false,
-                message: "Usuário não encontrado"
-            };
-        }
-
-        // Verificar senha (em sistema real, comparar hash)
-        if (user.password !== password) {
-            return {
-                success: false,
-                message: "Senha incorreta"
-            };
-        }
-
-        // Salvar usuário na sessão (remover senha por segurança)
-        const userSession = { ...user };
-        delete userSession.password;
+        const data = await response.json();
         
-        this.currentUser = userSession;
-        localStorage.setItem('current_user', JSON.stringify(userSession));
-
-        return {
-            success: true,
-            user: userSession
-        };
-    }
-
-    // Registro de novo usuário
-    register(userData) {
-        // Validar dados básicos
-        if (!userData.name || !userData.email || !userData.password || !userData.role) {
-            return {
-                success: false,
-                message: "Todos os campos são obrigatórios"
-            };
-        }
-
-        // Verificar se email já existe
-        if (this.users.some(u => u.email === userData.email)) {
-            return {
-                success: false,
-                message: "Este email já está cadastrado"
-            };
-        }
-
-        // Verificar código secreto para admin
-        if (userData.role === "admin_projeto") {
-            if (userData.adminCode !== this.ADMIN_CODE) {
-                return {
-                    success: false,
-                    message: "Código secreto inválido para administrador de projeto"
-                };
-            }
-        }
-
-        // Criar novo usuário
-        const newUser = {
-            id: this.users.length + 1,
-            name: userData.name,
-            email: userData.email,
-            password: userData.password, // Em sistema real, hashear aqui
-            role: userData.role,
-            createdAt: new Date().toISOString()
-        };
-
-        // Adicionar à lista
-        this.users.push(newUser);
-        this.saveUsersToStorage();
-
-        // Fazer login automático
-        return this.login(userData.email, userData.password);
-    }
-
-    // Verificar se usuário está logado
-    isLoggedIn() {
-        const userJson = localStorage.getItem('current_user');
-        if (userJson) {
-            this.currentUser = JSON.parse(userJson);
-            return true;
-        }
-        return false;
-    }
-
-    // Obter usuário atual
-    getCurrentUser() {
-        return this.currentUser;
-    }
-
-    // Logout
-    logout() {
-        this.currentUser = null;
-        localStorage.removeItem('current_user');
-        window.location.href = "index.html";
-    }
-
-    // Verificar permissões
-    hasPermission(requiredRole) {
-        if (!this.currentUser) return false;
-        
-        // Admin tem acesso a tudo
-        if (this.currentUser.role === "admin_projeto") {
-            return true;
+        if (!response.ok) {
+            // Erro da API (401, 500, etc)
+            mostrarErro(data.error || "Erro na autenticação");
+            return;
         }
         
-        // Verificar role específico
-        return this.currentUser.role === requiredRole;
+        if (data.success) {
+            // 2. Armazena dados do usuário
+            // API retorna: {success: true, id, username, nome, tipo, autenticado: true}
+            sessionStorage.setItem('usuario_logado', JSON.stringify(data));
+            
+            // 3. Redireciona para o sistema
+            window.location.href = "sistema.html";
+        } else {
+            mostrarErro(data.error || "Credenciais inválidas");
+        }
+        
+    } catch (error) {
+        console.error("Erro no login:", error);
+        mostrarErro("Erro de conexão com o servidor. Verifique se a API está online.");
     }
 }
 
-// Criar instância global
-const auth = new AuthSystem();
+function mostrarErro(mensagem) {
+    const errorMessage = document.getElementById("errorMessage");
+    errorMessage.innerHTML = mensagem;
+    errorMessage.style.display = "block";
+}
+
+// Configura eventos quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Focar no campo de usuário
+    document.getElementById("username").focus();
+    
+    // Permitir Enter para enviar
+    document.getElementById("password").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            verificarLogin();
+        }
+    });
+    
+    document.getElementById("username").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            document.getElementById("password").focus();
+        }
+    });
+    
+    // Vincular botão de login
+    const loginButton = document.querySelector('.login-button');
+    if (loginButton) {
+        loginButton.addEventListener('click', verificarLogin);
+    }
+});
