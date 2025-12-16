@@ -1,14 +1,14 @@
-# Exported from Render on 2025-12-16T18:26:28Z
 version: "1"
 services:
-- type: web
-  name: BillyBulletFortal.github.io-1
-  runtime: python
-  repo: https://github.com/BillyBulletFortal/BillyBulletFortal.github.io
-  plan: free
-  region: virginia
-  buildCommand: pip install -r requirements.txt
-  startCommand: gunicorn app:app
-  autoDeployTrigger: commit
-  previews:
-    generation: automatic
+  - type: web
+    name: billybulletfortal-api
+    runtime: python
+    repo: https://github.com/BillyBulletFortal/BillyBulletFortal.github.io
+    plan: free
+    region: virginia
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    autoDeployTrigger: commit
+    envVars:  # CORRIGIDO - mesma indentação que outros campos
+      - key: PYTHON_VERSION
+        value: 3.9.0
