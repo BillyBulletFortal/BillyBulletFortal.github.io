@@ -1,6 +1,6 @@
 // O bando de dados foi gerado e trasferido para Ender.com para ser usado como PAI
 
-const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com';
 
 async function verificarLogin() {
     const username = document.getElementById("username").value;
