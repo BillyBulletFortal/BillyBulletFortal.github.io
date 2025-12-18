@@ -1,6 +1,6 @@
 // auth.js - Sistema de Autenticação via API
 
-const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com';
 
 async function verificarLogin() {
     const username = document.getElementById("username").value;
