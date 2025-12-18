@@ -124,7 +124,12 @@ async function carregarProjetos() {
         alert("Erro de conexão com a API. Tente novamente.");
     }
 }
-
+function realizarLogoff() {
+    // Remove os dados do usuário do armazenamento local (se houver)
+    localStorage.removeItem('usuarioLogado');
+    // Redireciona para a tela de login (index.html)
+    window.location.href = 'index.html';
+}
 // ============================================
 // 4. INICIALIZAÇÃO DO SISTEMA
 // ============================================
@@ -178,3 +183,4 @@ function logout() {
 
 // Torna logout acessível globalmente
 window.logout = logout;
+
