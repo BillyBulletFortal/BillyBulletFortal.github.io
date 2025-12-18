@@ -1,6 +1,7 @@
 // sistema.js - Sistema de Gerenciamento de Projetos
 
-const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
+const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com';
+
 
 // ============================================
 // 1. VERIFICAÇÃO DE AUTENTICAÇÃO
@@ -88,3 +89,4 @@ function logout() {
 
 // Exportar para uso global
 window.logout = logout;
+
