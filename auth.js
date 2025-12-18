@@ -1,4 +1,4 @@
-// auth.js - Sistema de Autenticação via API
+// O bando de dados foi gerado e trasferido para Ender.com para ser usado como PAI
 
 const API_BASE_URL = 'https://billybulletfortal-github-io-1.onrender.com/api';
 
@@ -51,7 +51,7 @@ async function verificarLogin() {
         
     } catch (error) {
         console.error("Erro no login:", error);
-        mostrarErro("Erro de conexão com o servidor. Verifique se a API está online.");
+        mostrarErro("Erro de conexão com a API.");
     }
 }
 
