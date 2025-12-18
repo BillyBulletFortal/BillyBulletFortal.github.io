@@ -21,18 +21,50 @@ function verificarAutenticacao() {
             return null;
         }
         
-        console.log(`Usuário: ${usuario.nome} (${usuario.tipo})`);
+        console.log(`Usuário autenticado: ${usuario.nome} (${usuario.tipo})`);
         return usuario;
         
     } catch (e) {
-        console.error("Erro:", e);
+        console.error("Erro ao verificar autenticação:", e);
         window.location.href = "index.html";
         return null;
     }
 }
 
 // ============================================
-// 2. EXIBIR PROJETOS FILTRADOS
+// 2. CARREGAR PROJETOS DA API
+// ============================================
+
+async function carregarProjetos() {
+    const usuario = verificarAutenticacao();
+    if (!usuario) return;
+    
+    try {
+        // Busca projetos da API
+        console.log(`Carregando projetos da API: ${API_BASE_URL}/api/projetos`);
+        const resposta = await fetch(`${API_BASE_URL}/api/projetos`);
+        
+        if (!resposta.ok) {
+            throw new Error(`Erro API: ${resposta.status}`);
+        }
+        
+        const dados = await resposta.json();
+        
+        if (dados.success) {
+            console.log(`${dados.projetos.length} projetos carregados da API`);
+            exibirProjetosFiltrados(dados.projetos, usuario);
+        } else {
+            alert("Erro ao carregar projetos: " + (dados.error || "Desconhecido"));
+        }
+        
+    } catch (erro) {
+        console.error("Erro na conexão com API:", erro);
+        alert("Erro de conexão com a API. Tente novamente.");
+    }
+}
+
+// ============================================
+// 3. EXIBIR PROJETOS FILTRADOS (APENAS DA API)
 // ============================================
 
 function exibirProjetosFiltrados(projetos, usuario) {
@@ -47,7 +79,7 @@ function exibirProjetosFiltrados(projetos, usuario) {
     // Limpa resultados anteriores
     resultadoDiv.innerHTML = '';
     
-    // Filtra projetos conforme tipo de usuário
+    // Filtra projetos conforme tipo de usuário (dados vindos da API)
     let projetosFiltrados = [];
     let titulo = '';
     
@@ -62,7 +94,7 @@ function exibirProjetosFiltrados(projetos, usuario) {
         titulo = 'Projetos Comerciais e Públicos';
         
     } else if (usuario.tipo === 'admin_seguranca') {
-        projetosFiltrados = projetos;
+        projetosFiltrados = projetos; // Admin vê todos os projetos da API
         titulo = 'Todos os Projetos';
         
     } else {
@@ -75,9 +107,9 @@ function exibirProjetosFiltrados(projetos, usuario) {
         tituloDiv.textContent = titulo;
     }
     
-    // Exibe projetos
+    // Exibe projetos (todos vindos da API)
     if (projetosFiltrados.length === 0) {
-        resultadoDiv.innerHTML = '<p>Nenhum projeto encontrado.</p>';
+        resultadoDiv.innerHTML = '<p>Nenhum projeto encontrado na API.</p>';
     } else {
         projetosFiltrados.forEach(projeto => {
             const div = document.createElement('div');
@@ -87,51 +119,33 @@ function exibirProjetosFiltrados(projetos, usuario) {
                 <p>${projeto.descricao}</p>
                 <p><strong>Tipo:</strong> ${projeto.tipo}</p>
                 <p><strong>Acesso:</strong> ${projeto.nivel_acesso}</p>
+                <p><strong>ID no Banco:</strong> ${projeto.id}</p>
             `;
             resultadoDiv.appendChild(div);
         });
     }
     
-    console.log(`${usuario.nome} vê ${projetosFiltrados.length} projetos`);
+    console.log(`${usuario.nome} vê ${projetosFiltrados.length} projetos da API`);
 }
 
 // ============================================
-// 3. CARREGAR PROJETOS DA API
+// 4. FUNÇÕES DE GERENCIAMENTO DE SESSÃO
 // ============================================
 
-async function carregarProjetos() {
-    const usuario = verificarAutenticacao();
-    if (!usuario) return;
-    
-    try {
-        // Busca projetos da API
-        const resposta = await fetch(`${API_BASE_URL}/api/projetos`);
-        
-        if (!resposta.ok) {
-            throw new Error(`Erro API: ${resposta.status}`);
-        }
-        
-        const dados = await resposta.json();
-        
-        if (dados.success) {
-            exibirProjetosFiltrados(dados.projetos, usuario);
-        } else {
-            alert("Erro ao carregar projetos: " + (dados.error || "Desconhecido"));
-        }
-        
-    } catch (erro) {
-        console.error("Erro:", erro);
-        alert("Erro de conexão com a API. Tente novamente.");
-    }
-}
 function realizarLogoff() {
-    // Remove os dados do usuário do armazenamento local (se houver)
-    localStorage.removeItem('usuarioLogado');
-    // Redireciona para a tela de login (index.html)
+    // Remove os dados da sessão
+    sessionStorage.removeItem('usuario_logado');
+    localStorage.removeItem('usuarioLogado'); // Para compatibilidade
+    // Redireciona para a tela de login
     window.location.href = 'index.html';
 }
+
+function logout() {
+    realizarLogoff();
+}
+
 // ============================================
-// 4. INICIALIZAÇÃO DO SISTEMA
+// 5. INICIALIZAÇÃO DO SISTEMA
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -152,35 +166,14 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-    // Carrega projetos
+    // Carrega projetos APENAS da API
     carregarProjetos();
-    
-    // Configura botões de filtro (se existirem)
-    configurarFiltros();
 });
 
 // ============================================
-// 5. FUNÇÕES AUXILIARES
+// 6. EXPORTAR FUNÇÕES PARA ESCOPO GLOBAL
 // ============================================
 
-function configurarFiltros() {
-    // Se houver botões de filtro, configure-os aqui
-    const botoesFiltro = document.querySelectorAll('.aba');
-    if (botoesFiltro.length > 0) {
-        botoesFiltro.forEach(botao => {
-            botao.addEventListener('click', function() {
-                // Lógica de filtro pode ser adicionada depois
-                console.log("Filtrar por:", this.dataset.categoria);
-            });
-        });
-    }
-}
-
-function logout() {
-    sessionStorage.removeItem('usuario_logado');
-    window.location.href = "index.html";
-}
-
-// Torna logout acessível globalmente
+window.carregarProjetos = carregarProjetos;
+window.realizarLogoff = realizarLogoff;
 window.logout = logout;
-
