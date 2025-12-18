@@ -34,7 +34,7 @@ async function verificarLogin() {
         
         if (!response.ok) {
             // Erro da API (401, 500, etc)
-            mostrarErro(data.error || "Erro na autenticação");
+            mostrarErro(data.error || "ERRO NA AUTENTICAÇÃO");
             return;
         }
         
