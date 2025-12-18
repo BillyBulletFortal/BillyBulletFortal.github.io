@@ -41,6 +41,7 @@ async function verificarLogin() {
         if (data.success) {
             // 2. Armazena dados do usuário
             // API retorna: {success: true, id, username, nome, tipo, autenticado: true}
+            data.autenticado = true;
             sessionStorage.setItem('usuario_logado', JSON.stringify(data));
             
             // 3. Redireciona para o sistema
