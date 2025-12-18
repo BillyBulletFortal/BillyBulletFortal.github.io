@@ -131,7 +131,7 @@ def autenticar_usuario(username, senha):
             }
         return {"success": False, "error": "Credenciais inválidas"}
     except Exception as e:
-        print(f"❌ Erro na autenticação: {str(e)}")
+        print(f"ERRO DE AUTENTICAÇÃO: {str(e)}")
         return {"success": False, "error": "Erro no servidor"}
 
 def extrair_credenciais_auth_header():
