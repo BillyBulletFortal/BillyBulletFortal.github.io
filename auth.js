@@ -19,7 +19,7 @@ async function verificarLogin() {
     
     try {
         // Faz login na API
-        const response = await fetch(`${API_BASE_URL}/`, {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
