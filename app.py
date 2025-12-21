@@ -23,7 +23,7 @@ CORS(app, origins=[
 ])
 
 # Caminho do banco de dados
-DATABASE = 'wayne-industries.db'
+DATABASE = 'wayne_industries.db'
 
 # ============================================
 # 2. FUNÇÕES DO BANCO DE DADOS
