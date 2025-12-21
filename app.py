@@ -23,7 +23,7 @@ CORS(app, origins=[
 ])
 
 # Caminho do banco de dados
-DATABASE = os.path.join(os.path.dirname(__file__), 'wayne-industries.db')
+DATABASE = 'wayne-industries.db'
 
 # ============================================
 # 2. FUNÇÕES DO BANCO DE DADOS
