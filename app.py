@@ -1,6 +1,5 @@
 """
 API Wayne Industries - Sistema de Projetos
-Versão simplificada para trabalho acadêmico
 """
 
 from flask import Flask, jsonify, request
