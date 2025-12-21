@@ -1,12 +1,12 @@
 """
 API Wayne Industries - Sistema de Projetos
+Versão simplificada para trabalho acadêmico
 """
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
 import os
-import hashlib
 
 # ============================================
 # 1. CONFIGURAÇÃO INICIAL
@@ -25,7 +25,53 @@ CORS(app, origins=[
 DATABASE = 'wayne_industries.db'
 
 # ============================================
-# 2. FUNÇÕES DO BANCO DE DADOS
+# 2. USUÁRIOS FIXOS (SEM BANCO DE DADOS)
+# ============================================
+
+USUARIOS = {
+    'vendedor1': {
+        'nome': 'João Vendedor', 
+        'senha': 'valetudo', 
+        'tipo': 'vendedor',
+        'id': 1
+    },
+    'gerente01': {
+        'nome': 'Maria Gerente', 
+        'senha': 'precisodeaumento', 
+        'tipo': 'gerente',
+        'id': 2
+    },
+    'adminiseg1': {
+        'nome': 'Admin Segurança', 
+        'senha': 'bat1234', 
+        'tipo': 'admin_seguranca',
+        'id': 3
+    }
+}
+
+def verificar_login(username, senha):
+    """Verifica se usuário e senha são válidos (array fixo)"""
+    if username in USUARIOS and USUARIOS[username]['senha'] == senha:
+        usuario = USUARIOS[username]
+        return {
+            "success": True,
+            "id": usuario['id'],
+            "username": username,
+            "nome": usuario['nome'],
+            "tipo": usuario['tipo']
+        }
+    else:
+        return {"success": False, "error": "Usuário ou senha incorretos"}
+
+def verificar_admin(username, senha):
+    """Verifica se o usuário é administrador"""
+    resultado = verificar_login(username, senha)
+    if resultado['success'] and resultado['tipo'] == 'admin_seguranca':
+        return True
+    return False
+
+# ============================================
+# 3. FUNÇÕES DO BANCO DE DADOS (APENAS PROJETOS)
 # ============================================
 
 def criar_conexao():
@@ -36,50 +82,6 @@ def criar_conexao():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
-
-# ============================================
-# 3. FUNÇÕES DE AUTENTICAÇÃO
-# ============================================
-
-def verificar_login(username, senha):
-    """Verifica se usuário e senha são válidos"""
-    try:
-        conn = criar_conexao()
-        cursor = conn.cursor()
-        
-        senha_hash = hashlib.sha256(senha.encode()).hexdigest()
-        
-        cursor.execute(
-            "SELECT id, username, nome, tipo FROM usuarios WHERE username = ? AND senha_hash = ?",
-            (username, senha_hash)
-        )
-        
-        usuario = cursor.fetchone()
-        conn.close()
-        
-        if usuario:
-            return {
-                "success": True,
-                "id": usuario['id'],
-                "username": usuario['username'],
-                "nome": usuario['nome'],
-                "tipo": usuario['tipo']
-            }
-        else:
-            return {"success": False, "error": "Usuário ou senha incorretos"}
-            
-    except FileNotFoundError as e:
-        return {"success": False, "error": str(e)}
-    except Exception as e:
-        print(f"Erro no login: {e}")
-        return {"success": False, "error": "Erro no servidor"}
-
-def verificar_admin(username, senha):
-    """Verifica se o usuário é administrador"""
-    resultado = verificar_login(username, senha)
-    if resultado['success'] and resultado['tipo'] == 'admin_seguranca':
-        return True
-    return False
 
 # ============================================
 # 4. ENDPOINTS DA API
@@ -242,15 +244,12 @@ def verificar_saude():
         cursor.execute("SELECT COUNT(*) FROM projetos")
         projetos = cursor.fetchone()[0]
         
-        cursor.execute("SELECT COUNT(*) FROM usuarios")
-        usuarios = cursor.fetchone()[0]
-        
         conn.close()
         
         return jsonify({
             "status": "online",
             "projetos": projetos,
-            "usuarios": usuarios
+            "usuarios": 3  # Fixo: 3 usuários no array
         })
         
     except FileNotFoundError as e:
